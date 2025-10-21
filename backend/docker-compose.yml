@@ -1,0 +1,92 @@
+name: zynk-backend
+
+services:
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: zynk-backend-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - API_GATEWAY_PORT=3000
+      - USER_SERVICE_URL=http://user-service:3001
+      - CHARGER_SERVICE_URL=http://charger-service:3002
+      - ANALYTICS_SERVICE_URL=http://analytics-service:3003
+      - JWT_SECRET=your-jwt-secret-key
+    depends_on:
+      - user-service
+      - charger-service
+      - analytics-service
+    networks:
+      - zynk-network
+    restart: unless-stopped
+
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: zynk-backend-user-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - USER_SERVICE_PORT=3001
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - JWT_SECRET=your-jwt-secret-key
+    networks:
+      - zynk-network
+    restart: unless-stopped
+
+  charger-service:
+    build:
+      context: ./services/charger-service
+      dockerfile: Dockerfile
+    container_name: zynk-backend-charger-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - CHARGER_SERVICE_PORT=3002
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - JWT_SECRET=your-jwt-secret-key
+      - API_GATEWAY_URL=http://api-gateway:3000
+    networks:
+      - zynk-network
+    restart: unless-stopped
+
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+      dockerfile: Dockerfile
+    container_name: zynk-backend-analytics-service
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - ANALYTICS_SERVICE_PORT=3003
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - JWT_SECRET=your-jwt-secret-key
+    networks:
+      - zynk-network
+    restart: unless-stopped
+
+networks:
+  zynk-network:
+    driver: bridge
+
+# To run the services:
+# docker-compose up --build
+#
+# To run in background:
+# docker-compose up -d --build
+#
+# To stop services:
+# docker-compose down
+#
+# To view logs:
+# docker-compose logs -f [service-name]
