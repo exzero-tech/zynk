@@ -212,6 +212,7 @@ CREATE TABLE chargers (
   host_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
   type VARCHAR(20) NOT NULL CHECK (type IN ('level1', 'level2', 'dc_fast')),
+  connector_type VARCHAR(20) NOT NULL CHECK (connector_type IN ('type1', 'type2', 'ccs1', 'ccs2', 'chademo', 'tesla', 'gbt', 'nacs', 'three_pin', 'blue_commando')),
   power_output INTEGER NOT NULL, -- in watts
   charging_speed VARCHAR(50), -- e.g., "7.2 kW", "50 kW"
   price_per_hour DECIMAL(10, 2) NOT NULL,
@@ -229,6 +230,7 @@ CREATE TABLE chargers (
 CREATE INDEX idx_chargers_host ON chargers(host_id);
 CREATE INDEX idx_chargers_location ON chargers USING GIST(location);
 CREATE INDEX idx_chargers_type ON chargers(type);
+CREATE INDEX idx_chargers_connector_type ON chargers(connector_type);
 CREATE INDEX idx_chargers_status ON chargers(status);
 ```
 
@@ -545,7 +547,7 @@ Content-Type: application/json
 #### Search Chargers
 **Request:**
 ```typescript
-GET /api/v1/chargers/search?lat=6.9271&lng=79.8612&radius=5000&type=level2&minPower=7000
+GET /api/v1/chargers/search?lat=6.9271&lng=79.8612&radius=5000&type=level2&connectorType=type2&minPower=7000
 Authorization: Bearer <token>
 ```
 
@@ -559,6 +561,7 @@ Authorization: Bearer <token>
         "id": 1,
         "name": "Coffee House Charger",
         "type": "level2",
+        "connectorType": "type2",
         "powerOutput": 7200,
         "chargingSpeed": "7.2 kW",
         "pricePerHour": 250.00,
@@ -692,6 +695,7 @@ Content-Type: application/json
 {
   "name": "Mall Parking Charger",
   "type": "level2",
+  "connectorType": "type2",
   "powerOutput": 11000,
   "chargingSpeed": "11 kW",
   "pricePerHour": 300.00,
@@ -715,6 +719,7 @@ Content-Type: application/json
       "hostId": 5,
       "name": "Mall Parking Charger",
       "type": "level2",
+      "connectorType": "type2",
       "powerOutput": 11000,
       "chargingSpeed": "11 kW",
       "pricePerHour": 300.00,
