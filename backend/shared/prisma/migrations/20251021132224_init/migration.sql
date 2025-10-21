@@ -8,6 +8,9 @@ CREATE TYPE "UserRole" AS ENUM ('DRIVER', 'HOST', 'ADMIN');
 CREATE TYPE "ChargerType" AS ENUM ('LEVEL1', 'LEVEL2', 'DC_FAST');
 
 -- CreateEnum
+CREATE TYPE "ConnectorType" AS ENUM ('TYPE1', 'TYPE2', 'CCS1', 'CCS2', 'CHADEMO', 'TESLA', 'GBT', 'NACS', 'THREE_PIN', 'BLUE_COMMANDO');
+
+-- CreateEnum
 CREATE TYPE "ChargerStatus" AS ENUM ('AVAILABLE', 'OCCUPIED', 'OFFLINE', 'MAINTENANCE');
 
 -- CreateEnum
@@ -44,11 +47,12 @@ CREATE TABLE "chargers" (
     "hostId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "type" "ChargerType" NOT NULL,
+    "connectorType" "ConnectorType" NOT NULL,
     "powerOutput" INTEGER NOT NULL,
     "chargingSpeed" TEXT,
     "pricePerHour" DECIMAL(10,2) NOT NULL,
     "isByoc" BOOLEAN NOT NULL DEFAULT false,
-    "location" geography(POINT, 4326) NOT NULL,
+    "location" geography NOT NULL,
     "address" TEXT NOT NULL,
     "status" "ChargerStatus" NOT NULL DEFAULT 'AVAILABLE',
     "description" TEXT,
@@ -155,22 +159,19 @@ ALTER TABLE "chargers" ADD CONSTRAINT "chargers_hostId_fkey" FOREIGN KEY ("hostI
 ALTER TABLE "amenities" ADD CONSTRAINT "amenities_hostId_fkey" FOREIGN KEY ("hostId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "reservations" ADD CONSTRAINT "reservations_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "reservations" ADD CONSTRAINT "reservations_chargerId_fkey" FOREIGN KEY ("chargerId") REFERENCES "chargers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "charging_sessions" ADD CONSTRAINT "charging_sessions_reservationId_fkey" FOREIGN KEY ("reservationId") REFERENCES "reservations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "charging_sessions" ADD CONSTRAINT "charging_sessions_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "reservations" ADD CONSTRAINT "reservations_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "charging_sessions" ADD CONSTRAINT "charging_sessions_chargerId_fkey" FOREIGN KEY ("chargerId") REFERENCES "chargers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "payments" ADD CONSTRAINT "payments_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "charging_sessions"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "charging_sessions" ADD CONSTRAINT "charging_sessions_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "charging_sessions" ADD CONSTRAINT "charging_sessions_reservationId_fkey" FOREIGN KEY ("reservationId") REFERENCES "reservations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "payments" ADD CONSTRAINT "payments_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -179,10 +180,13 @@ ALTER TABLE "payments" ADD CONSTRAINT "payments_driverId_fkey" FOREIGN KEY ("dri
 ALTER TABLE "payments" ADD CONSTRAINT "payments_hostId_fkey" FOREIGN KEY ("hostId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "reviews" ADD CONSTRAINT "reviews_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "payments" ADD CONSTRAINT "payments_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "charging_sessions"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_chargerId_fkey" FOREIGN KEY ("chargerId") REFERENCES "chargers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_driverId_fkey" FOREIGN KEY ("driverId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "charging_sessions"("id") ON DELETE SET NULL ON UPDATE CASCADE;

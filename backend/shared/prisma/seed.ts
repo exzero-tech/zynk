@@ -56,11 +56,12 @@ async function main() {
 
   // Create sample charger (using raw SQL for PostGIS)
   await prisma.$executeRaw`
-    INSERT INTO "chargers" ("hostId", name, type, "powerOutput", "chargingSpeed", "pricePerHour", "isByoc", location, address, status, description)
+    INSERT INTO "chargers" ("hostId", name, type, "connectorType", "powerOutput", "chargingSpeed", "pricePerHour", "isByoc", location, address, status, description)
     VALUES (
       ${host.id},
       'Colombo Central Charger',
       'LEVEL2',
+      'TYPE2',
       7200,
       '7.2 kW',
       250.00,
