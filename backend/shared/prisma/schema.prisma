@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id               Int               @id @default(autoincrement())
+  email            String            @unique
+  password         String
+  role             UserRole
+  name             String
+  phone            String?
+  profileImageUrl  String?
+  isVerified       Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now())
+  amenities        Amenity[]
+  chargers         Charger[]
+  sessions         ChargingSession[]
+  paymentsAsDriver Payment[]         @relation("PaymentDriver")
+  paymentsAsHost   Payment[]         @relation("PaymentHost")
+  reservations     Reservation[]
+  reviews          Review[]
+
+  @@map("users")
+}
+
+model Charger {
+  id                Int                      @id @default(autoincrement())
+  hostId            Int
+  name              String
+  type              ChargerType
+  powerOutput       Int
+  chargingSpeed     String?
+  pricePerHour      Decimal                  @db.Decimal(10, 2)
+  isByoc            Boolean                  @default(false)
+  location          Unsupported("geography")
+  address           String
+  status            ChargerStatus            @default(AVAILABLE)
+  description       String?
+  vendor            String?
+  ocppChargePointId String?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @default(now())
+  host              User                     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  sessions          ChargingSession[]
+  reservations      Reservation[]
+  reviews           Review[]
+
+  @@map("chargers")
+}
+
+model Amenity {
+  id          Int         @id @default(autoincrement())
+  hostId      Int
+  type        AmenityType
+  name        String
+  description String?
+  isPromoted  Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  host        User        @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@map("amenities")
+}
+
+model Reservation {
+  id        Int               @id @default(autoincrement())
+  driverId  Int
+  chargerId Int
+  startTime DateTime
+  endTime   DateTime
+  status    ReservationStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @default(now())
+  session   ChargingSession?
+  charger   Charger           @relation(fields: [chargerId], references: [id], onDelete: Cascade)
+  driver    User              @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@map("reservations")
+}
+
+model ChargingSession {
+  id                        Int           @id @default(autoincrement())
+  reservationId             Int           @unique
+  driverId                  Int
+  chargerId                 Int
+  startTime                 DateTime
+  endTime                   DateTime?
+  energyConsumedKwh         Decimal?      @default(0) @db.Decimal(10, 2)
+  initialMeterReadingDriver Decimal?      @db.Decimal(10, 2)
+  initialMeterReadingHost   Decimal?      @db.Decimal(10, 2)
+  finalMeterReadingDriver   Decimal?      @db.Decimal(10, 2)
+  finalMeterReadingHost     Decimal?      @db.Decimal(10, 2)
+  initialReadingsVerified   Boolean       @default(false)
+  finalReadingsVerified     Boolean       @default(false)
+  totalCost                 Decimal?      @default(0) @db.Decimal(10, 2)
+  status                    SessionStatus @default(IN_PROGRESS)
+  ocppTransactionId         Int?
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @default(now())
+  charger                   Charger       @relation(fields: [chargerId], references: [id])
+  driver                    User          @relation(fields: [driverId], references: [id])
+  reservation               Reservation   @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  payments                  Payment[]
+  reviews                   Review[]
+
+  @@map("charging_sessions")
+}
+
+model Payment {
+  id               Int             @id @default(autoincrement())
+  sessionId        Int
+  driverId         Int
+  hostId           Int
+  amount           Decimal         @db.Decimal(10, 2)
+  platformFee      Decimal         @db.Decimal(10, 2)
+  hostAmount       Decimal         @db.Decimal(10, 2)
+  status           PaymentStatus   @default(PENDING)
+  payhereOrderId   String?
+  payherePaymentId String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @default(now())
+  driver           User            @relation("PaymentDriver", fields: [driverId], references: [id])
+  host             User            @relation("PaymentHost", fields: [hostId], references: [id])
+  session          ChargingSession @relation(fields: [sessionId], references: [id])
+
+  @@map("payments")
+}
+
+model Review {
+  id        Int              @id @default(autoincrement())
+  driverId  Int
+  chargerId Int
+  sessionId Int?
+  rating    Int              @db.SmallInt
+  comment   String?
+  createdAt DateTime         @default(now())
+  charger   Charger          @relation(fields: [chargerId], references: [id], onDelete: Cascade)
+  driver    User             @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  session   ChargingSession? @relation(fields: [sessionId], references: [id])
+
+  @@map("reviews")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+enum UserRole {
+  DRIVER
+  HOST
+  ADMIN
+}
+
+enum ChargerType {
+  LEVEL1
+  LEVEL2
+  DC_FAST
+}
+
+enum ChargerStatus {
+  AVAILABLE
+  OCCUPIED
+  OFFLINE
+  MAINTENANCE
+}
+
+enum AmenityType {
+  CAFE
+  RESTAURANT
+  MALL
+  WIFI
+  PARKING
+  RESTROOM
+  LOUNGE
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum SessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  STOPPED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
