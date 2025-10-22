@@ -25,6 +25,13 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+    "assets": [
+      "./assets/fonts/Inter_24pt-Light.ttf",
+      "./assets/fonts/Inter_24pt-Regular.ttf",
+      "./assets/fonts/Inter_24pt-Medium.ttf",
+      "./assets/fonts/Inter_24pt-SemiBold.ttf",
+      "./assets/fonts/Inter_24pt-Bold.ttf"
+    ],
     "plugins": [
       "expo-router",
       [
