@@ -40,18 +40,24 @@ model Charger {
   chargingSpeed     String?
   pricePerHour      Decimal                  @db.Decimal(10, 2)
   isByoc            Boolean                  @default(false)
+  
+  // OCPP Configuration
+  ocppChargePointId String?                  @unique // OCPP identifier
+  ocppVersion       String?                  // "1.6", "2.0.1"
+  ocppStatus        OcppStatus?              @default(OFFLINE)
+  
   location          Unsupported("geography(POINT, 4326)") // PostGIS geography type
   address           String
   status            ChargerStatus            @default(AVAILABLE)
   description       String?
   vendor            String?
-  ocppChargePointId String?
   createdAt         DateTime                 @default(now())
   updatedAt         DateTime                 @default(now())
   host              User                     @relation(fields: [hostId], references: [id], onDelete: Cascade)
   sessions          ChargingSession[]
   reservations      Reservation[]
   reviews           Review[]
+  ocppTransactions  OcppTransaction[]
 
   @@map("chargers")
 }
@@ -92,25 +98,75 @@ model ChargingSession {
   chargerId                 Int
   startTime                 DateTime
   endTime                   DateTime?
+  
+  // OCPP Integration (core fields)
+  ocppTransactionId         String?       // OCPP transaction ID
+  connectorId               Int?          // Which connector (1,2,3...)
+  
+  // Energy data (OCPP readings prioritized)
   energyConsumedKwh         Decimal?      @default(0) @db.Decimal(10, 2)
-  initialMeterReadingDriver Decimal?      @db.Decimal(10, 2)
-  initialMeterReadingHost   Decimal?      @db.Decimal(10, 2)
-  finalMeterReadingDriver   Decimal?      @db.Decimal(10, 2)
-  finalMeterReadingHost     Decimal?      @db.Decimal(10, 2)
-  initialReadingsVerified   Boolean       @default(false)
-  finalReadingsVerified     Boolean       @default(false)
+  startMeterReading         Decimal?      @db.Decimal(10, 2)
+  endMeterReading           Decimal?      @db.Decimal(10, 2)
+  
+  // BYOC fallback (nullable, only when needed)
+  driverReportedReading     Decimal?      @db.Decimal(10, 2)
+  hostReportedReading       Decimal?      @db.Decimal(10, 2)
+  readingsDisputed          Boolean       @default(false)
+  
   totalCost                 Decimal?      @default(0) @db.Decimal(10, 2)
   status                    SessionStatus @default(IN_PROGRESS)
-  ocppTransactionId         Int?
   createdAt                 DateTime      @default(now())
   updatedAt                 DateTime      @default(now())
   charger                   Charger       @relation(fields: [chargerId], references: [id])
   driver                    User          @relation(fields: [driverId], references: [id])
   reservation               Reservation   @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  ocppTransaction           OcppTransaction?
   payments                  Payment[]
   reviews                   Review[]
 
   @@map("charging_sessions")
+}
+
+model OcppTransaction {
+  id                    Int             @id @default(autoincrement())
+  transactionId         String          @unique // OCPP transaction ID
+  chargePointId         String          // Links to Charger.ocppChargePointId
+  connectorId           Int
+  idTag                 String          // User identifier from RFID/tag
+  startTime             DateTime
+  endTime               DateTime?
+  startMeterValue       Decimal         @db.Decimal(10, 2)
+  endMeterValue         Decimal?        @db.Decimal(10, 2)
+  energyConsumed        Decimal?        @db.Decimal(10, 2)
+  status                OcppTransactionStatus @default(ACTIVE)
+  
+  // Link back to business session
+  chargingSessionId     Int?            @unique
+  chargingSession       ChargingSession? @relation(fields: [chargingSessionId], references: [id])
+  
+  // Link to charger (for queries)
+  charger               Charger?        @relation(fields: [chargePointId], references: [ocppChargePointId])
+  
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @default(now())
+  
+  @@map("ocpp_transactions")
+}
+
+model OcppMessage {
+  id                    Int             @id @default(autoincrement())
+  chargePointId         String
+  messageType           String          // "REQUEST", "RESPONSE", "CALL", "CALLRESULT"
+  action                String          // "StartTransaction", "MeterValues", etc.
+  uniqueId              String          // OCPP message ID
+  payload               Json            // Full message data
+  direction             String          // "INBOUND", "OUTBOUND"
+  processed             Boolean         @default(false)
+  errorMessage          String?
+  createdAt             DateTime        @default(now())
+  
+  @@index([chargePointId, createdAt])
+  @@map("ocpp_messages")
 }
 
 model Payment {
@@ -218,4 +274,23 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+}
+
+enum OcppTransactionStatus {
+  ACTIVE
+  COMPLETED
+  STOPPED
+}
+
+enum OcppStatus {
+  AVAILABLE
+  PREPARING
+  CHARGING
+  SUSPENDED_EVSE
+  SUSPENDED_EV
+  FINISHING
+  RESERVED
+  UNAVAILABLE
+  FAULTED
+  OFFLINE
 }
