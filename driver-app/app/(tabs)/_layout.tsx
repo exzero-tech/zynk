@@ -76,7 +76,7 @@ export default function TabLayout() {
                   top: -13,
                 }} />
               )}
-              <IconSymbol size={focused ? 28 : 24} name="magnifyingglass" color={color} />
+              <IconSymbol size={focused ? 28 : 24} name="map.fill" color={color} />
             </>
           ),
         }}
