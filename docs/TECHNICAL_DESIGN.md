@@ -1853,6 +1853,13 @@ docker-compose down
 ### 10.1 Mobile App Styling
 Both Driver App and Host App use **NativeWind** (Tailwind CSS for React Native) for styling. Tailwind configuration file included in each app.
 
+**Theme:**
+- Background: `#000000` (Black)
+- Text: `#FFFFFF` (White)
+- Card Background: `#242424` (Dark Gray)
+- Accent Color: `#00BC74` (Green)
+- Font: Inter (use throughout entire project)
+
 ### 10.2 Real-Time Communication
 Mobile apps connect to API Gateway via Socket.io. Microservices notify API Gateway via HTTP POST to `/internal/notify` endpoint. API Gateway broadcasts events to mobile apps via Socket.io.
 
