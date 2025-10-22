@@ -1,4 +1,4 @@
--- Enable PostGIS extension
+-- Enable PostGIS extension for geography types
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- CreateEnum
@@ -52,7 +52,7 @@ CREATE TABLE "chargers" (
     "chargingSpeed" TEXT,
     "pricePerHour" DECIMAL(10,2) NOT NULL,
     "isByoc" BOOLEAN NOT NULL DEFAULT false,
-    "location" geography NOT NULL,
+    "location" geography(POINT, 4326) NOT NULL,
     "address" TEXT NOT NULL,
     "status" "ChargerStatus" NOT NULL DEFAULT 'AVAILABLE',
     "description" TEXT,

@@ -1,52 +1,20 @@
-# Multi-stage build for Charger Service
-FROM node:18-alpine AS base
+FROM node:18-alpine
 
-# Install dependencies only when needed
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+# Copy package files and install dependencies
+COPY services/charger-service/package*.json ./
+RUN npm install
 
-# Build stage
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+# Copy only schema and migrations (not seed.ts)
+COPY shared/prisma/schema.prisma ./shared/prisma/schema.prisma
+COPY shared/prisma/migrations ./shared/prisma/migrations
+RUN npx prisma generate --schema=./shared/prisma/schema.prisma
 
-# Build the application
-RUN npm run build
+# Copy service code
+COPY services/charger-service ./
 
-# Production stage
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-# Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 charger-service
-
-# Copy the built application
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-
-# Copy healthcheck script
-COPY healthcheck.js ./
-
-# Change ownership to the non-root user
-RUN chown -R charger-service:nodejs /app
-USER charger-service
-
-# Expose the port
 EXPOSE 3002
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node healthcheck.js
-
-# Start the application
-CMD ["npm", "start"]
+# Run in dev mode with nodemon + tsx
+CMD ["npm", "run", "dev"]
