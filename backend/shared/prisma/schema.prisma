@@ -108,10 +108,13 @@ model ChargingSession {
   startMeterReading         Decimal?      @db.Decimal(10, 2)
   endMeterReading           Decimal?      @db.Decimal(10, 2)
   
-  // BYOC fallback (nullable, only when needed)
-  driverReportedReading     Decimal?      @db.Decimal(10, 2)
-  hostReportedReading       Decimal?      @db.Decimal(10, 2)
-  readingsDisputed          Boolean       @default(false)
+  // BYOC dual-verification system (initial and final readings)
+  initialDriverReading      Decimal?      @db.Decimal(10, 2) // Driver's initial meter reading
+  initialHostReading        Decimal?      @db.Decimal(10, 2) // Host's initial meter reading
+  initialReadingsVerified   Boolean       @default(false)    // Both initial readings matched
+  finalDriverReading        Decimal?      @db.Decimal(10, 2) // Driver's final meter reading
+  finalHostReading          Decimal?      @db.Decimal(10, 2) // Host's final meter reading
+  finalReadingsVerified     Boolean       @default(false)    // Both final readings matched
   
   totalCost                 Decimal?      @default(0) @db.Decimal(10, 2)
   status                    SessionStatus @default(IN_PROGRESS)

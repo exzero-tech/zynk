@@ -172,16 +172,19 @@ Driver/Host Apps ←──Socket.io──→ API Gateway ←──HTTP──→ 
                         │ created_at  │
                         └─────────────┘
 
-┌─────────────┐
-│   Reviews   │
-├─────────────┤
-│ id (PK)     │
-│ driver_id   │
-│ charger_id  │
-│ rating      │
-│ comment     │
-│ created_at  │
-└─────────────┘
+┌─────────────┐         ┌─────────────┐         ┌─────────────┐
+│   Reviews   │         │OCPP Trans.  │         │OCPP Messages│
+├─────────────┤         ├─────────────┤         ├─────────────┤
+│ id (PK)     │         │ id (PK)     │         │ id (PK)     │
+│ driver_id   │         │ trans_id    │         │ charge_pt_id│
+│ charger_id  │         │ charge_pt_id│         │ message_type│
+│ rating      │         │ connector_id│         │ action      │
+│ comment     │         │ id_tag      │         │ payload     │
+│ created_at  │         │ start_time  │         │ direction   │
+└─────────────┘         │ end_time    │         │ processed   │
+                        │ energy_cons │         │ created_at  │
+                        │ status      │         └─────────────┘
+                        └─────────────┘
 ```
 
 ### 2.2 Table Schemas
@@ -191,7 +194,7 @@ Driver/Host Apps ←──Socket.io──→ API Gateway ←──HTTP──→ 
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
+  password VARCHAR(255) NOT NULL,
   role VARCHAR(20) NOT NULL CHECK (role IN ('driver', 'host', 'admin')),
   name VARCHAR(255) NOT NULL,
   phone VARCHAR(20),
@@ -213,16 +216,18 @@ CREATE TABLE chargers (
   name VARCHAR(255) NOT NULL,
   type VARCHAR(20) NOT NULL CHECK (type IN ('level1', 'level2', 'dc_fast')),
   connector_type VARCHAR(20) NOT NULL CHECK (connector_type IN ('type1', 'type2', 'ccs1', 'ccs2', 'chademo', 'tesla', 'gbt', 'nacs', 'three_pin', 'blue_commando')),
-  power_output INTEGER NOT NULL, -- in watts
-  charging_speed VARCHAR(50), -- e.g., "7.2 kW", "50 kW"
+  power_output INTEGER NOT NULL,
+  charging_speed VARCHAR(50),
   price_per_hour DECIMAL(10, 2) NOT NULL,
   is_byoc BOOLEAN DEFAULT false,
-  location GEOGRAPHY(POINT, 4326) NOT NULL, -- PostGIS type
+  ocpp_charge_point_id VARCHAR(255) UNIQUE,
+  ocpp_version VARCHAR(50),
+  ocpp_status VARCHAR(20) DEFAULT 'offline' CHECK (ocpp_status IN ('available', 'preparing', 'charging', 'suspended_evse', 'suspended_ev', 'finishing', 'reserved', 'unavailable', 'faulted', 'offline')),
+  location GEOGRAPHY(POINT, 4326) NOT NULL,
   address TEXT NOT NULL,
   status VARCHAR(20) DEFAULT 'available' CHECK (status IN ('available', 'occupied', 'offline', 'maintenance')),
   description TEXT,
-  vendor VARCHAR(100), -- for multi-vendor aggregation
-  ocpp_charge_point_id VARCHAR(255), -- for OCPP integration
+  vendor VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -277,17 +282,16 @@ CREATE TABLE charging_sessions (
   charger_id INTEGER NOT NULL REFERENCES chargers(id),
   start_time TIMESTAMP NOT NULL,
   end_time TIMESTAMP,
+  ocpp_transaction_id VARCHAR(255),
+  connector_id INTEGER,
   energy_consumed_kwh DECIMAL(10, 2) DEFAULT 0,
+  start_meter_reading DECIMAL(10, 2),
+  end_meter_reading DECIMAL(10, 2),
+  driver_reported_reading DECIMAL(10, 2),
+  host_reported_reading DECIMAL(10, 2),
+  readings_disputed BOOLEAN DEFAULT false,
   total_cost DECIMAL(10, 2) DEFAULT 0,
   status VARCHAR(20) DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed', 'stopped')),
-  ocpp_transaction_id INTEGER, -- OCPP transaction reference
-  -- BYOC meter reading fields
-  initial_meter_reading_driver DECIMAL(10, 2), -- Driver's initial kWh reading
-  initial_meter_reading_host DECIMAL(10, 2),   -- Host's initial kWh reading
-  final_meter_reading_driver DECIMAL(10, 2),   -- Driver's final kWh reading
-  final_meter_reading_host DECIMAL(10, 2),     -- Host's final kWh reading
-  initial_readings_verified BOOLEAN DEFAULT false,
-  final_readings_verified BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -334,6 +338,58 @@ CREATE TABLE reviews (
 
 CREATE INDEX idx_reviews_driver ON reviews(driver_id);
 CREATE INDEX idx_reviews_charger ON reviews(charger_id);
+```
+
+#### OCPP Transactions Table
+```sql
+CREATE TABLE ocpp_transactions (
+  id SERIAL PRIMARY KEY,
+  transaction_id VARCHAR(255) UNIQUE NOT NULL,
+  charge_point_id VARCHAR(255) NOT NULL,
+  connector_id INTEGER NOT NULL,
+  id_tag VARCHAR(255) NOT NULL,
+  start_time TIMESTAMP NOT NULL,
+  end_time TIMESTAMP,
+  start_meter_value DECIMAL(10, 2) NOT NULL,
+  end_meter_value DECIMAL(10, 2),
+  energy_consumed DECIMAL(10, 2),
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'completed', 'stopped')),
+  charging_session_id INTEGER UNIQUE REFERENCES charging_sessions(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_ocpp_transactions_charge_point ON ocpp_transactions(charge_point_id);
+CREATE INDEX idx_ocpp_transactions_session ON ocpp_transactions(charging_session_id);
+```
+
+#### OCPP Messages Table
+```sql
+CREATE TABLE ocpp_messages (
+  id SERIAL PRIMARY KEY,
+  charge_point_id VARCHAR(255) NOT NULL,
+  message_type VARCHAR(20) NOT NULL,
+  action VARCHAR(50) NOT NULL,
+  unique_id VARCHAR(255) NOT NULL,
+  payload JSONB NOT NULL,
+  direction VARCHAR(10) NOT NULL CHECK (direction IN ('inbound', 'outbound')),
+  processed BOOLEAN DEFAULT false,
+  error_message TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_ocpp_messages_charge_point_time ON ocpp_messages(charge_point_id, created_at);
+```
+
+#### Spatial Reference Systems Table (PostGIS)
+```sql
+CREATE TABLE spatial_ref_sys (
+  srid INTEGER PRIMARY KEY,
+  auth_name VARCHAR(256),
+  auth_srid INTEGER,
+  srtext VARCHAR(2048),
+  proj4text VARCHAR(2048)
+);
 ```
 
 ---
@@ -790,9 +846,9 @@ Content-Type: application/json
   "data": {
     "session": {
       "id": 25,
-      "initialMeterReadingDriver": 1234.5,
-      "initialMeterReadingHost": null,
-      "initialReadingsVerified": false,
+      "driverReportedReading": 1234.5,
+      "hostReportedReading": null,
+      "readingsDisputed": false,
       "message": "Waiting for host to submit initial reading"
     }
   }
@@ -806,9 +862,10 @@ Content-Type: application/json
   "data": {
     "session": {
       "id": 25,
-      "initialMeterReadingDriver": 1234.5,
-      "initialMeterReadingHost": 1234.5,
-      "initialReadingsVerified": true,
+      "driverReportedReading": 1234.5,
+      "hostReportedReading": 1234.5,
+      "readingsDisputed": false,
+      "energyConsumedKwh": 15.8,
       "status": "in_progress",
       "message": "Initial readings verified. Charging session started."
     }
@@ -836,9 +893,9 @@ Content-Type: application/json
   "data": {
     "session": {
       "id": 25,
-      "finalMeterReadingDriver": 1250.3,
-      "finalMeterReadingHost": 1250.3,
-      "finalReadingsVerified": true,
+      "driverReportedReading": 1250.3,
+      "hostReportedReading": 1250.3,
+      "readingsDisputed": false,
       "energyConsumedKwh": 15.8,  // 1250.3 - 1234.5
       "totalCost": 790.00,
       "status": "completed",
@@ -847,6 +904,12 @@ Content-Type: application/json
   }
 }
 ```
+
+#### Dispute Resolution:
+- If initial readings don't match: Session cannot start, both parties notified
+- If final readings don't match: Session marked as disputed, manual resolution required
+- Dispute escalation: Platform admin reviews readings, makes final determination
+- Payment held until dispute resolved
 
 ---
 
@@ -1384,10 +1447,10 @@ For BYOC chargers (standard outlets without OCPP), ZYNK uses a dual-verification
 1. **Session Start:**
    - Driver arrives at BYOC charging location
    - Driver initiates session via app
-   - Both driver and host read the **initial kWh meter reading**
+   - **Both driver and host read the INITIAL meter reading**
    - Both parties input the reading into the app
-   - System verifies that both readings match
-   - If readings match, session is confirmed and starts
+   - **System verifies that both initial readings match within tolerance**
+   - If readings match, session is confirmed and charging starts
 
 2. **During Charging:**
    - Timer-based duration tracking
@@ -1395,9 +1458,9 @@ For BYOC chargers (standard outlets without OCPP), ZYNK uses a dual-verification
 
 3. **Session End:**
    - Driver completes charging and stops session via app
-   - Both driver and host read the **final kWh meter reading**
+   - **Both driver and host read the FINAL meter reading**
    - Both parties input the final reading into the app
-   - System verifies that both readings match
+   - **System verifies that both final readings match within tolerance**
    - If readings match, energy consumed is calculated: `final_reading - initial_reading`
 
 4. **Fare Calculation:**
@@ -1409,20 +1472,22 @@ For BYOC chargers (standard outlets without OCPP), ZYNK uses a dual-verification
 #### Database Fields for BYOC Sessions:
 ```typescript
 {
-  initial_meter_reading_driver: number,  // Driver's initial reading
-  initial_meter_reading_host: number,    // Host's initial reading
-  final_meter_reading_driver: number,    // Driver's final reading
-  final_meter_reading_host: number,      // Host's final reading
-  readings_verified: boolean,            // Both readings match
-  energy_consumed_kwh: number            // Calculated from verified readings
+  initialDriverReading: number,    // Driver's initial meter reading
+  initialHostReading: number,      // Host's initial meter reading
+  initialReadingsVerified: boolean, // Both initial readings matched
+  finalDriverReading: number,      // Driver's final meter reading
+  finalHostReading: number,        // Host's final meter reading
+  finalReadingsVerified: boolean,  // Both final readings matched
+  energyConsumedKwh: number        // Calculated from verified readings
 }
 ```
 
 #### API Endpoints for BYOC Meter Readings:
 ```
-POST   /api/v1/sessions/:id/meter-reading/start     - Submit initial meter reading
-POST   /api/v1/sessions/:id/meter-reading/end       - Submit final meter reading
-GET    /api/v1/sessions/:id/meter-reading/status    - Check verification status
+POST   /api/v1/sessions/:id/meter-reading/initial     - Submit initial meter reading (driver or host)
+GET    /api/v1/sessions/:id/meter-reading/initial     - Check initial reading verification status
+POST   /api/v1/sessions/:id/meter-reading/final       - Submit final meter reading (driver or host)
+GET    /api/v1/sessions/:id/meter-reading/final       - Check final reading verification status
 ```
 
 #### Verification Logic:
@@ -1939,4 +2004,4 @@ socket.on('session-started', (data) => {
 
 **Project Deadline:** November 5, 2025
 
-**Last Updated:** October 21, 2025
+**Last Updated:** October 25, 2025
