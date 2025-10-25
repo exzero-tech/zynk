@@ -36,11 +36,14 @@ services:
       - CHARGER_SERVICE_URL=http://charger-service:3002
       - ANALYTICS_SERVICE_URL=http://analytics-service:3003
       - JWT_SECRET=your-jwt-secret-key
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
       - db
       - user-service
       - charger-service
       - analytics-service
+    volumes:
+      - ./api-gateway:/app/api-gateway
     networks:
       - zynk-network
     restart: unless-stopped
@@ -60,8 +63,12 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - DIRECT_URL=${DIRECT_URL}
       - JWT_SECRET=your-jwt-secret-key
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
       - db
+    volumes:
+      - ./services/user-service:/app/services/user-service
+      - ./shared:/app/shared
     networks:
       - zynk-network
     restart: unless-stopped
@@ -105,8 +112,12 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - DIRECT_URL=${DIRECT_URL}
       - JWT_SECRET=your-jwt-secret-key
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
       - db
+    volumes:
+      - ./services/analytics-service:/app/services/analytics-service
+      - ./shared:/app/shared
     networks:
       - zynk-network
     restart: unless-stopped
