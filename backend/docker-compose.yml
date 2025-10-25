@@ -49,6 +49,8 @@ services:
     container_name: zynk-backend-charger-service
     ports:
       - "3002:3002"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
       - CHARGER_SERVICE_PORT=3002
@@ -56,6 +58,10 @@ services:
       - DIRECT_URL=${DIRECT_URL}
       - JWT_SECRET=your-jwt-secret-key
       - API_GATEWAY_URL=http://api-gateway:3000
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./services/charger-service/src:/app/src
+      - ./shared:/app/shared
     networks:
       - zynk-network
     restart: unless-stopped
