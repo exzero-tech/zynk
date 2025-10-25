@@ -2,7 +2,7 @@ import express, { type Request, type Response } from "express";
 import http from "http";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
-import { initializeOCPPServer } from "./ocpp/ocpp.server.js";
+import { initializeOCPPServer, closeOCPPServer } from "./ocpp/ocpp.server.js";
 
 dotenv.config();
 
@@ -22,19 +22,33 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Hello from Charger Service!");
 });
 
-// Example API route
-app.get("/api/status", (req: Request, res: Response) => {
-  res.json({ status: "ok", message: "Server is running" });
-});
-
 
 try {
   initializeOCPPServer(server);
-  console.log('OCPP server initialization completed');
+  console.log('OCPP server initialized');
 } catch (error) {
   console.error('OCPP server initialization failed:', error);
   process.exit(1);
 }
+
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  closeOCPPServer();
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  closeOCPPServer();
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
 
 // Start server
 server.listen(PORT, () => {

@@ -1,4 +1,5 @@
 import { ocppService } from './ocpp.service.js';
+import { connectionMetadata } from './ocpp.server.js';
 
 // Handler functions for OCPP messages
 // Each handler receives (chargePointId: string, payload: any) and returns response
@@ -36,7 +37,12 @@ export async function handleHeartbeat(chargePointId: string, payload: any) {
   console.log(`Heartbeat from ${chargePointId}`);
 
   // Update last heartbeat time
-  // For now, just return current time
+  const metadata = connectionMetadata.get(chargePointId);
+  if (metadata) {
+    metadata.lastHeartbeat = new Date();
+  }
+
+  // Return current time
   return {
     currentTime: new Date().toISOString()
   };

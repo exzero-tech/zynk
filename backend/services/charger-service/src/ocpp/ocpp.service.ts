@@ -8,43 +8,50 @@ export class OCPPService {
    */
   async registerChargePoint(chargePointId: string, bootData: any) {
     try {
-      const charger = await prisma.charger.upsert({
-        where: { ocppChargePointId: chargePointId },
-        update: {
-          ocppVersion: '1.6J',
-          ocppStatus: 'AVAILABLE',
-          updatedAt: new Date(),
-        },
-        create: {
-          hostId: 1, // TODO: Get from authentication
-          name: `OCPP Charger ${chargePointId}`,
-          type: 'LEVEL2', // Default
-          connectorType: 'TYPE2', // Default
-          powerOutput: 7200, // Default 7.2kW
-          chargingSpeed: '7.2 kW',
-          pricePerHour: 250.00,
-          ocppChargePointId: chargePointId,
-          ocppVersion: '1.6J',
-          ocppStatus: 'AVAILABLE',
-          location: {
-            type: 'Point',
-            coordinates: [79.8612, 6.9271], // Default Colombo coordinates
-          },
-          address: `OCPP Location for ${chargePointId}`,
-          status: 'AVAILABLE',
-        },
+      // Check if charger already exists
+      const existingCharger = await prisma.charger.findUnique({
+        where: { ocppChargePointId: chargePointId }
       });
+
+      let charger;
+      if (existingCharger) {
+        // Update existing charger
+        charger = await prisma.charger.update({
+          where: { id: existingCharger.id },
+          data: { status: 'AVAILABLE' }
+        });
+      } else {
+        // Create new charger using data from BootNotification
+        charger = await prisma.charger.create({
+          data: {
+            hostId: 1, // Will be updated when host claims this charger
+            name: `${bootData.chargePointVendor || 'Unknown'} ${bootData.chargePointModel || 'Charger'}`,
+            type: 'LEVEL2', // Default - will be updated based on model
+            connectorType: 'TYPE2', // Default - will be updated based on model
+            powerOutput: 7200, // Default - will be updated based on specifications
+            chargingSpeed: '7.2 kW', // Default - will be calculated from power output
+            pricePerHour: 0, // No price until configured by host
+            ocppChargePointId: chargePointId,
+            ocppVersion: '1.6',
+            status: 'OFFLINE', // Start offline until location/configuration is set
+            vendor: bootData.chargePointVendor,
+            description: `Firmware: ${bootData.firmwareVersion || 'Unknown'}, Serial: ${bootData.chargePointSerialNumber || 'Unknown'}`,
+            location: { type: 'Point', coordinates: [79.8612, 6.9271] }, // Default Colombo location - will be updated when deployed
+            address: `Charge Point ${chargePointId}` // Default - will be updated when deployed
+          }
+        });
+      }
 
       // Log the OCPP message
       await prisma.ocppMessage.create({
         data: {
-          chargePointId: chargePointId,
+          chargePointId,
           messageType: 'BootNotification',
           action: 'BootNotification',
           uniqueId: `boot-${Date.now()}`,
           payload: bootData,
-          direction: 'INBOUND',
-        },
+          direction: 'INBOUND'
+        }
       });
 
       return charger;
@@ -54,13 +61,10 @@ export class OCPPService {
     }
   }
 
-  /**
-   * Update charger status based on OCPP StatusNotification
-   */
   async updateChargerStatus(chargePointId: string, connectorId: number, status: string, errorCode?: string) {
     try {
       // Map OCPP status to our database status
-      const statusMapping: { [key: string]: any } = {
+      const statusMapping: { [key: string]: string } = {
         'Available': 'AVAILABLE',
         'Preparing': 'OCCUPIED',
         'Charging': 'OCCUPIED',
@@ -74,26 +78,20 @@ export class OCPPService {
 
       const dbStatus = statusMapping[status] || 'OFFLINE';
 
-      await prisma.charger.updateMany({
-        where: { ocppChargePointId: chargePointId },
-        data: {
-          ocppStatus: status.toUpperCase() as any,
-          status: dbStatus,
-          updatedAt: new Date(),
-        },
-      });
+      await prisma.$queryRaw`
+        UPDATE chargers SET status = ${dbStatus}, "updatedAt" = NOW() 
+        WHERE "ocppChargePointId" = ${chargePointId}
+      `;
 
       // Log the OCPP message
-      await prisma.ocppMessage.create({
-        data: {
-          chargePointId: chargePointId,
-          messageType: 'StatusNotification',
-          action: 'StatusNotification',
-          uniqueId: `status-${Date.now()}`,
-          payload: { connectorId, status, errorCode },
-          direction: 'INBOUND',
-        },
-      });
+      await prisma.$queryRaw`
+        INSERT INTO ocpp_messages (
+          "chargePointId", "messageType", "action", "uniqueId", "payload", "direction", "createdAt"
+        ) VALUES (
+          ${chargePointId}, 'StatusNotification', 'StatusNotification', 
+          ${`status-${Date.now()}`}, ${JSON.stringify({ connectorId, status, errorCode })}, 'INBOUND', NOW()
+        )
+      `;
 
       return { success: true };
     } catch (error) {
@@ -102,13 +100,21 @@ export class OCPPService {
     }
   }
 
-  /**
-   * Get charger by OCPP charge point ID
-   */
-  async getChargerByChargePointId(chargePointId: string) {
-    return await prisma.charger.findFirst({
-      where: { ocpp_charge_point_id: chargePointId },
-    });
+  async updateChargerConnectionStatus(chargePointId: string, isOnline: boolean) {
+    try {
+      const status = isOnline ? 'AVAILABLE' : 'OFFLINE';
+
+      await prisma.$queryRaw`
+        UPDATE chargers SET status = ${status}, "updatedAt" = NOW() 
+        WHERE "ocppChargePointId" = ${chargePointId}
+      `;
+
+      console.log(`Updated charger ${chargePointId} connection status: ${isOnline ? 'online' : 'offline'}`);
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating charger connection status:', error);
+      throw error;
+    }
   }
 }
 

@@ -42,11 +42,11 @@ model Charger {
   isByoc            Boolean                  @default(false)
   
   // OCPP Configuration
-  ocppChargePointId String?                  @unique // OCPP identifier
+  ocppChargePointId String                   @unique // OCPP identifier
   ocppVersion       String?                  // "1.6", "2.0.1"
   ocppStatus        OcppStatus?              @default(OFFLINE)
   
-  location          Unsupported("geography(POINT, 4326)") // PostGIS geography type
+  location          Json?                    // Location as JSON: {"type": "Point", "coordinates": [lng, lat]}
   address           String
   status            ChargerStatus            @default(AVAILABLE)
   description       String?
