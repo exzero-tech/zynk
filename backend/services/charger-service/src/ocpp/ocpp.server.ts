@@ -35,6 +35,7 @@ export function initializeOCPPServer(server: any) {
     });
 
     console.log('OCPP WebSocket server initialized with connection limits');
+    console.log('WebSocket server clients:', wss.clients?.size || 'N/A');
   } catch (error) {
     console.error('Failed to initialize OCPP server:', error);
   }
@@ -139,6 +140,7 @@ async function handleConnection(ws: WebSocket, request: IncomingMessage) {
 
   // Handle incoming messages
   ws.on('message', async (data: Buffer) => {
+    console.log(`MESSAGE EVENT TRIGGERED for ${chargePointId}, data type: ${typeof data}, length: ${data.length}`);
     try {
       await handleMessage(chargePointId, data);
     } catch (error) {
@@ -150,8 +152,10 @@ async function handleConnection(ws: WebSocket, request: IncomingMessage) {
   // Handle connection close
   ws.on('close', async (code, reason) => {
     console.log(`Charge point ${chargePointId} disconnected: ${code} - ${reason}`);
+    console.log(`Cleaning up connection for ${chargePointId}`);
     connections.delete(chargePointId);
     connectionMetadata.delete(chargePointId);
+    console.log(`Remaining connections: ${connections.size}`);
 
     // Update charger status to offline when connection closes
     try {
@@ -194,10 +198,13 @@ function extractChargePointId(request: IncomingMessage): string | null {
 
 async function handleMessage(chargePointId: string, data: Buffer) {
   const message = data.toString();
-  console.log(`Received from ${chargePointId}: ${message}`);
+  console.log(`Received raw message from ${chargePointId}: ${message}`);
+  console.log(`Message length: ${message.length}`);
 
   try {
     const parsedMessage = JSON.parse(message);
+    console.log(`Parsed message type:`, typeof parsedMessage);
+    console.log(`Is array:`, Array.isArray(parsedMessage));
 
     // Validate OCPP message format - must be an array
     if (!Array.isArray(parsedMessage)) {
@@ -209,6 +216,7 @@ async function handleMessage(chargePointId: string, data: Buffer) {
     }
 
     const [messageTypeId, uniqueId, ...rest] = parsedMessage;
+    console.log(`Parsed OCPP message: type=${messageTypeId}, uniqueId=${uniqueId}, action=${rest[0] || 'N/A'}`);
 
     // Validate message type ID
     if (typeof messageTypeId !== 'number' || ![2, 3, 4].includes(messageTypeId)) {
