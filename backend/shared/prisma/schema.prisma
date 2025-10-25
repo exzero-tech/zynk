@@ -46,7 +46,7 @@ model Charger {
   ocppVersion       String?                  // "1.6", "2.0.1"
   ocppStatus        OcppStatus?              @default(OFFLINE)
   
-  location          Json?                    // Location as JSON: {"type": "Point", "coordinates": [lng, lat]}
+  location          Unsupported("geography(Point, 4326)") // PostGIS geography type
   address           String
   status            ChargerStatus            @default(AVAILABLE)
   description       String?

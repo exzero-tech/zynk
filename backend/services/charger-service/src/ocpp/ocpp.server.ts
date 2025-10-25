@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage } from 'http';
 import { ocppHandlers } from './ocpp.handler.js';
-import { ocppService } from './ocpp.service.js';
+import { updateChargerConnectionStatusDefault } from '../services/ocpp.service.js';
 
 // State management
 let wss: WebSocketServer;
@@ -132,7 +132,7 @@ async function handleConnection(ws: WebSocket, request: IncomingMessage) {
 
   // Update charger status to online when connection established
   try {
-    await ocppService.updateChargerConnectionStatus(chargePointId, true);
+    await updateChargerConnectionStatusDefault(chargePointId, true);
     console.log(`Updated ${chargePointId} status to online`);
   } catch (error) {
     console.error(`Failed to update online status for ${chargePointId}:`, error);
@@ -159,7 +159,7 @@ async function handleConnection(ws: WebSocket, request: IncomingMessage) {
 
     // Update charger status to offline when connection closes
     try {
-      await ocppService.updateChargerConnectionStatus(chargePointId, false);
+      await updateChargerConnectionStatusDefault(chargePointId, false);
       console.log(`Updated ${chargePointId} status to offline`);
     } catch (error) {
       console.error(`Failed to update offline status for ${chargePointId}:`, error);

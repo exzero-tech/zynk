@@ -1,4 +1,4 @@
-import { ocppService } from './ocpp.service.js';
+import { registerChargePointDefault, updateChargerStatusDefault } from '../services/ocpp.service.js';
 import { connectionMetadata } from './ocpp.server.js';
 
 // Handler functions for OCPP messages
@@ -8,7 +8,7 @@ export async function handleBootNotification(chargePointId: string, payload: any
   console.log(`BootNotification from ${chargePointId}:`, payload);
 
   // Register the charge point
-  await ocppService.registerChargePoint(chargePointId, payload);
+  await registerChargePointDefault(chargePointId, payload);
 
   // Return acceptance response
   return {
@@ -22,12 +22,11 @@ export async function handleStatusNotification(chargePointId: string, payload: a
   console.log(`StatusNotification from ${chargePointId}:`, payload);
 
   // Update charger status
-  await ocppService.updateChargerStatus(
-    chargePointId,
-    payload.connectorId,
-    payload.status,
-    payload.errorCode
-  );
+  await updateChargerStatusDefault(chargePointId, {
+    connectorId: payload.connectorId,
+    status: payload.status,
+    errorCode: payload.errorCode
+  });
 
   // StatusNotification has empty response payload
   return {};
