@@ -1,6 +1,27 @@
 name: zynk-backend
 
 services:
+  db:
+    image: postgis/postgis:15-3.4-alpine
+    container_name: zynk-backend-db
+    environment:
+      POSTGRES_DB: zynk
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-postgis.sql:/docker-entrypoint-initdb.d/init-postgis.sql
+    networks:
+      - zynk-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d zynk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api-gateway:
     build:
       context: .
@@ -15,10 +36,14 @@ services:
       - CHARGER_SERVICE_URL=http://charger-service:3002
       - ANALYTICS_SERVICE_URL=http://analytics-service:3003
       - JWT_SECRET=your-jwt-secret-key
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
+      - db
       - user-service
       - charger-service
       - analytics-service
+    volumes:
+      - ./api-gateway:/app/api-gateway
     networks:
       - zynk-network
     restart: unless-stopped
@@ -38,6 +63,12 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - DIRECT_URL=${DIRECT_URL}
       - JWT_SECRET=your-jwt-secret-key
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - db
+    volumes:
+      - ./services/user-service:/app/services/user-service
+      - ./shared:/app/shared
     networks:
       - zynk-network
     restart: unless-stopped
@@ -49,6 +80,8 @@ services:
     container_name: zynk-backend-charger-service
     ports:
       - "3002:3002"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=development
       - CHARGER_SERVICE_PORT=3002
@@ -56,6 +89,12 @@ services:
       - DIRECT_URL=${DIRECT_URL}
       - JWT_SECRET=your-jwt-secret-key
       - API_GATEWAY_URL=http://api-gateway:3000
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./services/charger-service/src:/app/src
+      - ./shared:/app/shared
+    depends_on:
+      - db
     networks:
       - zynk-network
     restart: unless-stopped
@@ -73,6 +112,12 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - DIRECT_URL=${DIRECT_URL}
       - JWT_SECRET=your-jwt-secret-key
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - db
+    volumes:
+      - ./services/analytics-service:/app/services/analytics-service
+      - ./shared:/app/shared
     networks:
       - zynk-network
     restart: unless-stopped
@@ -81,14 +126,5 @@ networks:
   zynk-network:
     driver: bridge
 
-# To run the services:
-# docker-compose up --build
-#
-# To run in background:
-# docker-compose up -d --build
-#
-# To stop services:
-# docker-compose down
-#
-# To view logs:
-# docker-compose logs -f [service-name]
+volumes:
+  postgres_data:

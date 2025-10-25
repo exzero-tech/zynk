@@ -15,33 +15,39 @@
     "db:studio": "prisma studio --schema=../../shared/prisma/schema.prisma",
     "db:seed": "tsx ../../shared/prisma/seed.ts"
   },
-  "keywords": ["charger-service", "express", "typescript", "microservices", "ocpp"],
+  "keywords": [
+    "charger-service",
+    "express",
+    "typescript",
+    "microservices",
+    "ocpp"
+  ],
   "author": "ZYNK Team",
   "license": "MIT",
   "dependencies": {
+    "axios": "^1.6.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "@prisma/client": "^5.10.2",
-    "ws": "^8.16.0",
-    "axios": "^1.6.7"
+    "socket.io": "^4.8.1",
+    "ws": "^8.16.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.33.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.11.24",
     "@types/ws": "^8.5.10",
     "eslint": "^9.33.0",
-    "@eslint/js": "^9.33.0",
     "globals": "^16.3.0",
     "nodemon": "^3.1.10",
+    "prettier": "^3.2.5",
+    "prisma": "^5.10.2",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.39.1",
-    "prettier": "^3.2.5",
-    "prisma": "^5.10.2"
+    "typescript-eslint": "^8.39.1"
   },
   "engines": {
     "node": ">=18.0.0"
