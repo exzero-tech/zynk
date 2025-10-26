@@ -1,12 +1,7 @@
 import { PrismaClient } from '@prisma/client';
-import type { BootNotificationRequest, StatusNotificationRequest } from '../models/ocpp.types.js';
+import type { BootNotificationRequest, StatusNotificationRequest, StatusUpdateData, OCPPTransactionData, OCPPTransactionUpdateData } from '../models/ocpp.types.js';
 
 // Types for better type safety (using existing types where possible)
-interface StatusUpdateData {
-  connectorId: number;
-  status: string;
-  errorCode?: string;
-}
 
 // Status mapping function (pure function)
 const mapOCPPStatusToDB = (ocppStatus: string): string => {
@@ -57,12 +52,14 @@ export const createChargerFromBootData = (chargePointId: string, bootData: BootN
   powerOutput: 7200,
   chargingSpeed: '7.2 kW',
   pricePerHour: 0,
+  isByoc: false,
   ocppChargePointId: chargePointId,
   ocppVersion: '1.6',
+  ocppStatus: 'OFFLINE' as const,
   status: 'OFFLINE' as const,
   vendor: bootData.chargePointVendor || null,
   description: `Firmware: ${bootData.firmwareVersion || 'Unknown'}, Serial: ${bootData.chargePointSerialNumber || 'Unknown'}`,
-  location: { type: 'Point', coordinates: [79.8612, 6.9271] }, // Default Colombo location
+  // Note: location field is Unsupported in Prisma (PostGIS geography), will be set via raw SQL after creation
   address: `Charge Point ${chargePointId}`
 });
 
@@ -110,11 +107,38 @@ export const registerChargePoint = async (
       // Ensure system user exists
       const systemUser = await ensureSystemUser(prisma);
 
-      // Create new charger
+      // Create new charger using raw SQL (PostGIS geography requires raw SQL)
       const chargerData = createChargerFromBootData(chargePointId, bootData, systemUser.id);
-      charger = await prisma.charger.create({
-        data: chargerData
+      
+      const result = await prisma.$queryRaw<Array<{id: number}>>`
+        INSERT INTO chargers (
+          "hostId", name, type, "connectorType", "powerOutput", "chargingSpeed", 
+          "pricePerHour", "isByoc", "ocppChargePointId", "ocppVersion", "ocppStatus",
+          location, address, status, description, vendor, "createdAt", "updatedAt"
+        ) VALUES (
+          ${chargerData.hostId}, ${chargerData.name}, ${chargerData.type}::"ChargerType", 
+          ${chargerData.connectorType}::"ConnectorType", ${chargerData.powerOutput}, ${chargerData.chargingSpeed},
+          ${chargerData.pricePerHour}, ${chargerData.isByoc}, ${chargerData.ocppChargePointId}, 
+          ${chargerData.ocppVersion}, ${chargerData.ocppStatus}::"OcppStatus",
+          ST_GeographyFromText('POINT(79.8612 6.9271)'), ${chargerData.address}, 
+          ${chargerData.status}::"ChargerStatus", ${chargerData.description}, ${chargerData.vendor},
+          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        )
+        RETURNING id
+      `;
+
+      if (!result || result.length === 0) {
+        throw new Error('Failed to create charger');
+      }
+
+      // Fetch the created charger
+      charger = await prisma.charger.findUnique({
+        where: { id: result[0].id }
       });
+
+      if (!charger) {
+        throw new Error('Charger created but not found');
+      }
     }
 
     // Log the OCPP message
@@ -182,14 +206,7 @@ export const updateChargerConnectionStatus = async (
 // Functional approach: Create OCPP transaction
 export const createOcppTransaction = async (
   prisma: PrismaClient,
-  transactionData: {
-    transactionId: string;
-    chargePointId: string;
-    connectorId: number;
-    idTag: string;
-    startMeterValue: number;
-    chargingSessionId?: number;
-  }
+  transactionData: OCPPTransactionData
 ) => {
   try {
     const data: any = {
@@ -223,12 +240,7 @@ export const createOcppTransaction = async (
 export const updateOcppTransaction = async (
   prisma: PrismaClient,
   transactionId: string,
-  updateData: {
-    endTime?: Date;
-    endMeterValue?: number;
-    energyConsumed?: number;
-    status?: 'ACTIVE' | 'COMPLETED' | 'STOPPED';
-  }
+  updateData: OCPPTransactionUpdateData
 ) => {
   try {
     const data: any = {
@@ -316,23 +328,12 @@ export const logOCPPMessageDefault = (
   direction: 'INBOUND' | 'OUTBOUND' = 'INBOUND'
 ) => logOCPPMessage(defaultPrisma, chargePointId, messageType, action, payload, direction);
 
-export const createOcppTransactionDefault = (transactionData: {
-  transactionId: string;
-  chargePointId: string;
-  connectorId: number;
-  idTag: string;
-  startMeterValue: number;
-  chargingSessionId?: number;
-}) => createOcppTransaction(defaultPrisma, transactionData);
+export const createOcppTransactionDefault = (transactionData: OCPPTransactionData) =>
+  createOcppTransaction(defaultPrisma, transactionData);
 
 export const updateOcppTransactionDefault = (
   transactionId: string,
-  updateData: {
-    endTime?: Date;
-    endMeterValue?: number;
-    energyConsumed?: number;
-    status?: 'ACTIVE' | 'COMPLETED' | 'STOPPED';
-  }
+  updateData: OCPPTransactionUpdateData
 ) => updateOcppTransaction(defaultPrisma, transactionId, updateData);
 
 export const linkOcppToSessionDefault = (transactionId: string, sessionId: number) =>

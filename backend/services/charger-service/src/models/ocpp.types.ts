@@ -71,3 +71,141 @@ export interface ChargePointConnection {
   lastHeartbeat?: Date;
   status?: string;
 }
+
+// Remote command interfaces
+export interface RemoteCommandRequest {
+  chargePointId: string;
+  action: string;
+  payload: any;
+  timeoutMs?: number;
+}
+
+export interface RemoteCommandResponse {
+  success: boolean;
+  transactionId?: string;
+  errorCode?: string;
+  errorDescription?: string;
+}
+
+// Remote command payload interfaces
+export interface RemoteStartTransactionRequest {
+  connectorId: number;
+  idTag: string;
+  reservationId?: number;
+}
+
+export interface RemoteStartTransactionResponse {
+  status: 'Accepted' | 'Rejected';
+  transactionId?: number;
+}
+
+export interface RemoteStopTransactionRequest {
+  transactionId: number;
+}
+
+export interface RemoteStopTransactionResponse {
+  status: 'Accepted' | 'Rejected';
+}
+
+// Heartbeat Payload
+export interface HeartbeatRequest {
+  // Empty payload for Heartbeat
+}
+
+export interface HeartbeatResponse {
+  currentTime: string;
+}
+
+// Authorize Payload
+export interface AuthorizeRequest {
+  idTag: string;
+}
+
+export interface AuthorizeResponse {
+  idTagInfo: {
+    status: 'Accepted' | 'Blocked' | 'Expired' | 'Invalid' | 'ConcurrentTx';
+    expiryDate?: string;
+    parentIdTag?: string;
+  };
+}
+
+// StartTransaction Payload
+export interface StartTransactionRequest {
+  connectorId: number;
+  idTag: string;
+  meterStart: number;
+  reservationId?: number;
+  timestamp: string;
+}
+
+export interface StartTransactionResponse {
+  transactionId: string;
+  idTagInfo: {
+    status: 'Accepted' | 'Blocked' | 'Expired' | 'Invalid' | 'ConcurrentTx';
+    expiryDate?: string;
+    parentIdTag?: string;
+  };
+}
+
+// StopTransaction Payload
+export interface StopTransactionRequest {
+  transactionId: string;
+  idTag: string;
+  timestamp: string;
+  meterStop: number;
+  reason?: 'EmergencyStop' | 'EVDisconnected' | 'HardReset' | 'Local' | 'Other' | 'PowerLoss' | 'Reboot' | 'Remote' | 'SoftReset' | 'UnlockCommand' | 'DeAuthorized';
+  transactionData?: any[];
+}
+
+export interface StopTransactionResponse {
+  idTagInfo?: {
+    status: 'Accepted' | 'Blocked' | 'Expired' | 'Invalid' | 'ConcurrentTx';
+    expiryDate?: string;
+    parentIdTag?: string;
+  };
+}
+
+// MeterValues Payload
+export interface MeterValuesRequest {
+  connectorId: number;
+  transactionId?: number;
+  meterValue: Array<{
+    timestamp: string;
+    sampledValue: Array<{
+      value: string;
+      context?: 'Interruption.Begin' | 'Interruption.End' | 'Other' | 'Sample.Clock' | 'Sample.Periodic' | 'Transaction.Begin' | 'Transaction.End';
+      format?: 'Raw' | 'SignedData';
+      measurand?: string;
+      phase?: 'L1' | 'L2' | 'L3' | 'N' | 'L1-N' | 'L2-N' | 'L3-N' | 'L1-L2' | 'L2-L3' | 'L3-L1';
+      location?: 'Cable' | 'EV' | 'Inlet' | 'Outlet' | 'Body';
+      unit?: string;
+    }>;
+  }>;
+}
+
+export interface MeterValuesResponse {
+  // Empty payload for MeterValues
+}
+
+// Service layer interfaces
+export interface StatusUpdateData {
+  connectorId: number;
+  status: string;
+  errorCode?: string;
+}
+
+export interface OCPPTransactionData {
+  transactionId: string;
+  chargePointId: string;
+  connectorId: number;
+  idTag: string;
+  startMeterValue: number;
+  chargingSessionId?: number;
+}
+
+export interface OCPPTransactionUpdateData {
+  endTime?: Date;
+  endMeterValue?: number;
+  energyConsumed?: number;
+  status?: 'ACTIVE' | 'COMPLETED' | 'STOPPED';
+}
