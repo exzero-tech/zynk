@@ -17,7 +17,12 @@ RUN npx prisma generate --schema=./shared/prisma/schema.prisma
 # Copy service code
 COPY services/charger-service ./
 
+# Copy and set up entrypoint script
+COPY services/charger-service/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 3002
 
-# Run in dev mode with nodemon + tsx
+# Use entrypoint to regenerate Prisma on startup (after volumes are mounted)
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["npm", "run", "dev"]

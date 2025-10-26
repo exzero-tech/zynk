@@ -1,7 +1,8 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage } from 'http';
-import { ocppHandlers } from './ocpp.handler.js';
-import { ocppService } from './ocpp.service.js';
+import { handleBootNotificationController, handleStatusNotificationController, handleHeartbeatController, handleAuthorizeController, handleStartTransactionController, handleStopTransactionController, handleMeterValuesController } from '../controllers/ocpp.controller.js';
+import { updateChargerConnectionStatusDefault } from '../services/ocpp.service.js';
+import { handleCallResult, handleCallError, processQueuedCommands } from './ocpp.remote.js';
 
 // State management
 let wss: WebSocketServer;
@@ -132,8 +133,11 @@ async function handleConnection(ws: WebSocket, request: IncomingMessage) {
 
   // Update charger status to online when connection established
   try {
-    await ocppService.updateChargerConnectionStatus(chargePointId, true);
+    await updateChargerConnectionStatusDefault(chargePointId, true);
     console.log(`Updated ${chargePointId} status to online`);
+
+    // Process any queued remote commands
+    await processQueuedCommands(chargePointId);
   } catch (error) {
     console.error(`Failed to update online status for ${chargePointId}:`, error);
   }
@@ -159,7 +163,7 @@ async function handleConnection(ws: WebSocket, request: IncomingMessage) {
 
     // Update charger status to offline when connection closes
     try {
-      await ocppService.updateChargerConnectionStatus(chargePointId, false);
+      await updateChargerConnectionStatusDefault(chargePointId, false);
       console.log(`Updated ${chargePointId} status to offline`);
     } catch (error) {
       console.error(`Failed to update offline status for ${chargePointId}:`, error);
@@ -237,10 +241,10 @@ async function handleMessage(chargePointId: string, data: Buffer) {
         await handleCall(chargePointId, uniqueId, rest[0], rest[1]);
         break;
       case 3: // CALLRESULT
-        console.log(`Received CALLRESULT ${uniqueId} from ${chargePointId}`);
+        await handleCallResult(chargePointId, uniqueId, rest[0]);
         break;
       case 4: // CALLERROR
-        console.log(`Received CALLERROR ${uniqueId} from ${chargePointId}:`, rest);
+        await handleCallError(chargePointId, uniqueId, rest[0], rest[1]);
         break;
       default:
         console.log(`Unhandled message type: ${messageTypeId}`);
@@ -271,16 +275,36 @@ async function handleCall(chargePointId: string, uniqueId: string, action: strin
   }
 
   try {
-    // Get handler from handlers map
-    const handler = ocppHandlers[action];
-    if (!handler) {
-      console.log(`Unhandled action: ${action}`);
-      sendCallError(ws, uniqueId, 'NotImplemented', `Action ${action} not implemented`);
-      return;
-    }
+    // Route to appropriate controller function based on action
+    let response;
 
-    // Execute handler
-    const response = await handler(chargePointId, payload);
+    switch (action) {
+      case 'BootNotification':
+        response = await handleBootNotificationController(chargePointId, payload);
+        break;
+      case 'StatusNotification':
+        response = await handleStatusNotificationController(chargePointId, payload);
+        break;
+      case 'Heartbeat':
+        response = await handleHeartbeatController(chargePointId, payload);
+        break;
+      case 'Authorize':
+        response = await handleAuthorizeController(chargePointId, payload);
+        break;
+      case 'StartTransaction':
+        response = await handleStartTransactionController(chargePointId, payload);
+        break;
+      case 'StopTransaction':
+        response = await handleStopTransactionController(chargePointId, payload);
+        break;
+      case 'MeterValues':
+        response = await handleMeterValuesController(chargePointId, payload);
+        break;
+      default:
+        console.log(`Unhandled action: ${action}`);
+        sendCallError(ws, uniqueId, 'NotImplemented', `Action ${action} not implemented`);
+        return;
+    }
 
     // Send CALLRESULT
     sendCallResult(ws, uniqueId, response);
