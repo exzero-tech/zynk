@@ -179,6 +179,122 @@ export const updateChargerConnectionStatus = async (
   }
 };
 
+// Functional approach: Create OCPP transaction
+export const createOcppTransaction = async (
+  prisma: PrismaClient,
+  transactionData: {
+    transactionId: string;
+    chargePointId: string;
+    connectorId: number;
+    idTag: string;
+    startMeterValue: number;
+    chargingSessionId?: number;
+  }
+) => {
+  try {
+    const data: any = {
+      transactionId: transactionData.transactionId,
+      chargePointId: transactionData.chargePointId,
+      connectorId: transactionData.connectorId,
+      idTag: transactionData.idTag,
+      startTime: new Date(),
+      startMeterValue: transactionData.startMeterValue,
+      status: 'ACTIVE' as const
+    };
+
+    // Only include chargingSessionId if provided
+    if (transactionData.chargingSessionId !== undefined) {
+      data.chargingSessionId = transactionData.chargingSessionId;
+    }
+
+    const transaction = await prisma.ocppTransaction.create({
+      data
+    });
+
+    console.log(`Created OCPP transaction: ${transaction.transactionId}`);
+    return transaction;
+  } catch (error) {
+    console.error('Error creating OCPP transaction:', error);
+    throw error;
+  }
+};
+
+// Functional approach: Update OCPP transaction
+export const updateOcppTransaction = async (
+  prisma: PrismaClient,
+  transactionId: string,
+  updateData: {
+    endTime?: Date;
+    endMeterValue?: number;
+    energyConsumed?: number;
+    status?: 'ACTIVE' | 'COMPLETED' | 'STOPPED';
+  }
+) => {
+  try {
+    const data: any = {
+      updatedAt: new Date()
+    };
+
+    // Only include defined fields
+    if (updateData.endTime !== undefined) data.endTime = updateData.endTime;
+    if (updateData.endMeterValue !== undefined) data.endMeterValue = updateData.endMeterValue;
+    if (updateData.energyConsumed !== undefined) data.energyConsumed = updateData.energyConsumed;
+    if (updateData.status !== undefined) data.status = updateData.status;
+
+    const transaction = await prisma.ocppTransaction.update({
+      where: { transactionId },
+      data
+    });
+
+    console.log(`Updated OCPP transaction: ${transactionId}`);
+    return transaction;
+  } catch (error) {
+    console.error('Error updating OCPP transaction:', error);
+    throw error;
+  }
+};
+
+// Functional approach: Link OCPP transaction to charging session
+export const linkOcppToSession = async (
+  prisma: PrismaClient,
+  transactionId: string,
+  sessionId: number
+) => {
+  try {
+    await prisma.ocppTransaction.update({
+      where: { transactionId },
+      data: {
+        chargingSessionId: sessionId,
+        updatedAt: new Date()
+      }
+    });
+
+    // Also update the session with OCPP transaction ID
+    await prisma.chargingSession.update({
+      where: { id: sessionId },
+      data: {
+        ocppTransactionId: transactionId,
+        updatedAt: new Date()
+      }
+    });
+
+    console.log(`Linked OCPP transaction ${transactionId} to session ${sessionId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error linking OCPP transaction to session:', error);
+    throw error;
+  }
+};
+
+// Functional approach: Calculate energy consumed
+export const calculateEnergyConsumed = (startMeterValue: number, endMeterValue: number): number => {
+  if (endMeterValue < startMeterValue) {
+    console.warn(`End meter value (${endMeterValue}) is less than start (${startMeterValue})`);
+    return 0;
+  }
+  return endMeterValue - startMeterValue;
+};
+
 // Create a default prisma instance for convenience (can be overridden with dependency injection)
 const defaultPrisma = new PrismaClient();
 
@@ -191,3 +307,33 @@ export const updateChargerStatusDefault = (chargePointId: string, statusData: St
 
 export const updateChargerConnectionStatusDefault = (chargePointId: string, isOnline: boolean) =>
   updateChargerConnectionStatus(defaultPrisma, chargePointId, isOnline);
+
+export const logOCPPMessageDefault = (
+  chargePointId: string,
+  messageType: string,
+  action: string,
+  payload: any,
+  direction: 'INBOUND' | 'OUTBOUND' = 'INBOUND'
+) => logOCPPMessage(defaultPrisma, chargePointId, messageType, action, payload, direction);
+
+export const createOcppTransactionDefault = (transactionData: {
+  transactionId: string;
+  chargePointId: string;
+  connectorId: number;
+  idTag: string;
+  startMeterValue: number;
+  chargingSessionId?: number;
+}) => createOcppTransaction(defaultPrisma, transactionData);
+
+export const updateOcppTransactionDefault = (
+  transactionId: string,
+  updateData: {
+    endTime?: Date;
+    endMeterValue?: number;
+    energyConsumed?: number;
+    status?: 'ACTIVE' | 'COMPLETED' | 'STOPPED';
+  }
+) => updateOcppTransaction(defaultPrisma, transactionId, updateData);
+
+export const linkOcppToSessionDefault = (transactionId: string, sessionId: number) =>
+  linkOcppToSession(defaultPrisma, transactionId, sessionId);
