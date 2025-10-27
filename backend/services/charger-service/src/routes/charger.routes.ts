@@ -1,17 +1,42 @@
 import express from 'express';
 import {
   startRemoteCharging,
-  stopRemoteCharging
+  stopRemoteCharging,
+  createCharger,
+  getChargers,
+  getChargerById,
+  updateCharger,
+  deleteCharger,
+  getChargersByHost,
+  patchChargerStatus
 } from '../controllers/charger.controller.js';
 
 const router = express.Router();
 
-// POST /api/v1/chargers/:id/remote-start
-// Start remote charging session
-router.post('/:id/remote-start', startRemoteCharging);
+// Charger CRUD
+// POST /api/v1/chargers
+router.post('/', createCharger);
 
-// POST /api/v1/chargers/:id/remote-stop
-// Stop remote charging session
+// GET /api/v1/chargers
+router.get('/', getChargers);
+
+// GET /api/v1/chargers/:id
+router.get('/:id', getChargerById);
+
+// PUT /api/v1/chargers/:id
+router.put('/:id', updateCharger);
+
+// DELETE /api/v1/chargers/:id
+router.delete('/:id', deleteCharger);
+
+// GET chargers by host
+router.get('/host/:hostId', getChargersByHost);
+
+// PATCH /api/v1/chargers/:id/status
+router.patch('/:id/status', patchChargerStatus);
+
+// Remote commands (OCPP)
+router.post('/:id/remote-start', startRemoteCharging);
 router.post('/:id/remote-stop', stopRemoteCharging);
 
 export default router;
