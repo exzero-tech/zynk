@@ -3,6 +3,8 @@ import { validateUserProfileUpdate, UserProfileUpdateData } from '../utils/valid
 
 const prisma = new PrismaClient();
 
+export type { UserProfileUpdateData };
+
 export interface UserProfile {
   id: number;
   email: string;

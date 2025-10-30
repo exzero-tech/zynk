@@ -15,7 +15,7 @@ import { UserRegistrationData, UserLoginData } from '../utils/validation';
  */
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, name, phone, role }: UserRegistrationData = req.body;
+    const { email, password, name, phone, role } = req.body;
 
     const result: AuthResponse = await registerUser({
       email,

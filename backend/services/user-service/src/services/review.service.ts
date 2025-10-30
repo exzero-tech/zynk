@@ -5,13 +5,12 @@ const prisma = new PrismaClient();
 
 export interface Review {
   id: number;
-  driverId: number;
-  chargerId: number;
-  sessionId?: number;
+  reviewerId: number;
+  reviewedUserId: number;
   rating: number;
   comment?: string;
   createdAt: Date;
-  driver: {
+  reviewer: {
     id: number;
     name: string;
   };
@@ -30,58 +29,83 @@ export interface ServiceResponse<T> {
  * Create a new review
  */
 export const createReview = async (
-  driverId: number,
-  reviewData: ReviewData
+  reviewerId: number,
+  reviewedUserId: number,
+  rating: number,
+  comment?: string
 ): Promise<ServiceResponse<Review>> => {
   try {
-    // Validate input data
-    const validation = validateReview(reviewData);
-    if (!validation.isValid) {
+    // Validate rating
+    if (rating < 1 || rating > 5) {
       return {
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: validation.errors.join(', ')
+          message: 'Rating must be between 1 and 5'
         }
       };
     }
 
-    // Check if charger exists
-    const charger = await prisma.charger.findUnique({
-      where: { id: reviewData.chargerId }
+    // Check if reviewer exists
+    const reviewer = await prisma.user.findUnique({
+      where: { id: reviewerId }
     });
 
-    if (!charger) {
+    if (!reviewer) {
       return {
         success: false,
         error: {
-          code: 'CHARGER_NOT_FOUND',
-          message: 'Charger not found'
+          code: 'USER_NOT_FOUND',
+          message: 'Reviewer not found'
         }
       };
     }
 
-    // Check if user has already reviewed this charger (optional - allow multiple reviews)
-    // For now, we'll allow multiple reviews per driver-charger pair
+    // Check if reviewed user exists
+    const reviewedUser = await prisma.user.findUnique({
+      where: { id: reviewedUserId }
+    });
+
+    if (!reviewedUser) {
+      return {
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'Reviewed user not found'
+        }
+      };
+    }
+
+    // Prevent self-review
+    if (reviewerId === reviewedUserId) {
+      return {
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Users cannot review themselves'
+        }
+      };
+    }
+
+    // Check if user has already reviewed this person (optional - allow multiple reviews)
+    // For now, we'll allow multiple reviews per user pair
 
     // Create review
     const review = await prisma.review.create({
       data: {
-        driverId,
-        chargerId: reviewData.chargerId,
-        sessionId: reviewData.sessionId,
-        rating: reviewData.rating,
-        comment: reviewData.comment
+        reviewerId,
+        reviewedUserId,
+        rating,
+        comment
       },
       select: {
         id: true,
-        driverId: true,
-        chargerId: true,
-        sessionId: true,
+        reviewerId: true,
+        reviewedUserId: true,
         rating: true,
         comment: true,
         createdAt: true,
-        driver: {
+        reviewer: {
           select: {
             id: true,
             name: true
@@ -251,15 +275,16 @@ export const getReviewsByDriver = async (
  */
 export const updateReview = async (
   reviewId: number,
-  driverId: number,
-  updateData: Partial<ReviewData>
+  reviewerId: number,
+  rating?: number,
+  comment?: string
 ): Promise<ServiceResponse<Review>> => {
   try {
-    // Check if review exists and belongs to the driver
+    // Check if review exists and belongs to the reviewer
     const existingReview = await prisma.review.findFirst({
       where: {
         id: reviewId,
-        driverId
+        reviewerId
       }
     });
 
@@ -273,28 +298,21 @@ export const updateReview = async (
       };
     }
 
-    // Validate update data (only rating and comment can be updated)
-    const validationData: ReviewData = {
-      chargerId: existingReview.chargerId,
-      rating: updateData.rating ?? existingReview.rating,
-      comment: updateData.comment
-    };
-
-    const validation = validateReview(validationData);
-    if (!validation.isValid) {
+    // Validate rating if provided
+    if (rating !== undefined && (rating < 1 || rating > 5)) {
       return {
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: validation.errors.join(', ')
+          message: 'Rating must be between 1 and 5'
         }
       };
     }
 
     // Prepare update data
     const data: any = {};
-    if (updateData.rating !== undefined) data.rating = updateData.rating;
-    if (updateData.comment !== undefined) data.comment = updateData.comment;
+    if (rating !== undefined) data.rating = rating;
+    if (comment !== undefined) data.comment = comment;
 
     // Update review
     const updatedReview = await prisma.review.update({
@@ -302,13 +320,12 @@ export const updateReview = async (
       data,
       select: {
         id: true,
-        driverId: true,
-        chargerId: true,
-        sessionId: true,
+        reviewerId: true,
+        reviewedUserId: true,
         rating: true,
         comment: true,
         createdAt: true,
-        driver: {
+        reviewer: {
           select: {
             id: true,
             name: true
@@ -338,15 +355,13 @@ export const updateReview = async (
  */
 export const deleteReview = async (
   reviewId: number,
-  driverId: number
+  userId: number,
+  isAdmin: boolean = false
 ): Promise<ServiceResponse<{ message: string }>> => {
   try {
-    // Check if review exists and belongs to the driver
-    const existingReview = await prisma.review.findFirst({
-      where: {
-        id: reviewId,
-        driverId
-      }
+    // Check if review exists and user has permission to delete it
+    const existingReview = await prisma.review.findUnique({
+      where: { id: reviewId }
     });
 
     if (!existingReview) {
@@ -354,7 +369,18 @@ export const deleteReview = async (
         success: false,
         error: {
           code: 'REVIEW_NOT_FOUND',
-          message: 'Review not found or you do not have permission to delete it'
+          message: 'Review not found'
+        }
+      };
+    }
+
+    // Check permissions: user must be the reviewer or an admin
+    if (!isAdmin && existingReview.reviewerId !== userId) {
+      return {
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to delete this review'
         }
       };
     }
@@ -437,6 +463,191 @@ export const getChargerReviewStats = async (chargerId: number): Promise<ServiceR
       error: {
         code: 'INTERNAL_ERROR',
         message: 'An error occurred while fetching review statistics'
+      }
+    };
+  }
+};
+
+/**
+ * Get reviews for a specific user
+ */
+export const getReviewsForUser = async (
+  userId: number,
+  page: number = 1,
+  limit: number = 10
+): Promise<ServiceResponse<{ reviews: Review[]; total: number; averageRating: number; page: number; totalPages: number }>> => {
+  try {
+    const skip = (page - 1) * limit;
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'User not found'
+        }
+      };
+    }
+
+    // Get reviews with pagination
+    const [reviews, total] = await Promise.all([
+      prisma.review.findMany({
+        where: { reviewedUserId: userId },
+        select: {
+          id: true,
+          reviewerId: true,
+          reviewedUserId: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          reviewer: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.review.count({ where: { reviewedUserId: userId } })
+    ]);
+
+    // Calculate average rating
+    const ratingSum = reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0);
+    const averageRating = total > 0 ? Number((ratingSum / total).toFixed(1)) : 0;
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      success: true,
+      data: {
+        reviews: reviews as Review[],
+        total,
+        averageRating,
+        page,
+        totalPages
+      }
+    };
+  } catch (error) {
+    console.error('Get reviews for user error:', error);
+    return {
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'An error occurred while fetching reviews'
+      }
+    };
+  }
+};
+
+/**
+ * Get review by ID
+ */
+export const getReviewById = async (reviewId: number): Promise<ServiceResponse<Review>> => {
+  try {
+    const review = await prisma.review.findUnique({
+      where: { id: reviewId },
+      select: {
+        id: true,
+        reviewerId: true,
+        reviewedUserId: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+        reviewer: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    if (!review) {
+      return {
+        success: false,
+        error: {
+          code: 'REVIEW_NOT_FOUND',
+          message: 'Review not found'
+        }
+      };
+    }
+
+    return {
+      success: true,
+      data: review as Review
+    };
+  } catch (error) {
+    console.error('Get review by ID error:', error);
+    return {
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'An error occurred while fetching review'
+      }
+    };
+  }
+};
+
+/**
+ * Get all reviews (admin only)
+ */
+export const getAllReviews = async (
+  page: number = 1,
+  limit: number = 10
+): Promise<ServiceResponse<{ reviews: Review[]; total: number; page: number; totalPages: number }>> => {
+  try {
+    const skip = (page - 1) * limit;
+
+    // Get reviews with pagination
+    const [reviews, total] = await Promise.all([
+      prisma.review.findMany({
+        select: {
+          id: true,
+          reviewerId: true,
+          reviewedUserId: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          reviewer: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.review.count()
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      success: true,
+      data: {
+        reviews: reviews as Review[],
+        total,
+        page,
+        totalPages
+      }
+    };
+  } catch (error) {
+    console.error('Get all reviews error:', error);
+    return {
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'An error occurred while fetching reviews'
       }
     };
   }
