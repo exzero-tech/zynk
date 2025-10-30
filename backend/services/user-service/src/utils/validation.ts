@@ -146,6 +146,7 @@ export const validateUserLogin = (data: UserLoginData): { isValid: boolean; erro
  */
 export interface ReviewData {
   chargerId: number;
+  sessionId: number;
   rating: number;
   comment?: string;
 }
@@ -155,6 +156,10 @@ export const validateReview = (data: ReviewData): { isValid: boolean; errors: st
 
   if (!data.chargerId || typeof data.chargerId !== 'number' || data.chargerId <= 0) {
     errors.push('Valid charger ID is required');
+  }
+
+  if (!data.sessionId || typeof data.sessionId !== 'number' || data.sessionId <= 0) {
+    errors.push('Valid session ID is required');
   }
 
   if (!data.rating || typeof data.rating !== 'number' || data.rating < 1 || data.rating > 5) {

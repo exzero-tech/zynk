@@ -1,18 +1,27 @@
 import { PrismaClient } from '@prisma/client';
-import { validateReview, ReviewData } from '../utils/validation';
 
 const prisma = new PrismaClient();
 
 export interface Review {
   id: number;
-  reviewerId: number;
-  reviewedUserId: number;
+  driverId: number;
+  chargerId: number;
+  sessionId?: number;
   rating: number;
   comment?: string;
   createdAt: Date;
-  reviewer: {
+  driver: {
     id: number;
     name: string;
+  };
+  charger: {
+    id: number;
+    name: string;
+  };
+  session?: {
+    id: number;
+    startTime: Date;
+    endTime?: Date;
   };
 }
 
@@ -26,11 +35,12 @@ export interface ServiceResponse<T> {
 }
 
 /**
- * Create a new review
+ * Create a new review for a charger after a charging session
  */
 export const createReview = async (
-  reviewerId: number,
-  reviewedUserId: number,
+  driverId: number,
+  chargerId: number,
+  sessionId: number,
   rating: number,
   comment?: string
 ): Promise<ServiceResponse<Review>> => {
@@ -46,69 +56,118 @@ export const createReview = async (
       };
     }
 
-    // Check if reviewer exists
-    const reviewer = await prisma.user.findUnique({
-      where: { id: reviewerId }
+    // Check if driver exists
+    const driver = await prisma.user.findUnique({
+      where: { id: driverId }
     });
 
-    if (!reviewer) {
+    if (!driver) {
       return {
         success: false,
         error: {
           code: 'USER_NOT_FOUND',
-          message: 'Reviewer not found'
+          message: 'Driver not found'
         }
       };
     }
 
-    // Check if reviewed user exists
-    const reviewedUser = await prisma.user.findUnique({
-      where: { id: reviewedUserId }
+    // Check if charger exists
+    const charger = await prisma.charger.findUnique({
+      where: { id: chargerId }
     });
 
-    if (!reviewedUser) {
+    if (!charger) {
       return {
         success: false,
         error: {
-          code: 'USER_NOT_FOUND',
-          message: 'Reviewed user not found'
+          code: 'CHARGER_NOT_FOUND',
+          message: 'Charger not found'
         }
       };
     }
 
-    // Prevent self-review
-    if (reviewerId === reviewedUserId) {
+    // Check if session exists and belongs to the driver
+    const session = await prisma.chargingSession.findFirst({
+      where: {
+        id: sessionId,
+        driverId: driverId,
+        chargerId: chargerId
+      }
+    });
+
+    if (!session) {
       return {
         success: false,
         error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Users cannot review themselves'
+          code: 'SESSION_NOT_FOUND',
+          message: 'Charging session not found or does not belong to this driver'
         }
       };
     }
 
-    // Check if user has already reviewed this person (optional - allow multiple reviews)
-    // For now, we'll allow multiple reviews per user pair
+    // Check if session is completed
+    if (session.status !== 'COMPLETED') {
+      return {
+        success: false,
+        error: {
+          code: 'SESSION_NOT_COMPLETED',
+          message: 'Cannot review an incomplete charging session'
+        }
+      };
+    }
+
+    // Check if driver has already reviewed this session
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        driverId: driverId,
+        sessionId: sessionId
+      }
+    });
+
+    if (existingReview) {
+      return {
+        success: false,
+        error: {
+          code: 'REVIEW_EXISTS',
+          message: 'You have already reviewed this charging session'
+        }
+      };
+    }
 
     // Create review
     const review = await prisma.review.create({
       data: {
-        reviewerId,
-        reviewedUserId,
+        driverId,
+        chargerId,
+        sessionId,
         rating,
         comment
       },
       select: {
         id: true,
-        reviewerId: true,
-        reviewedUserId: true,
+        driverId: true,
+        chargerId: true,
+        sessionId: true,
         rating: true,
         comment: true,
         createdAt: true,
-        reviewer: {
+        driver: {
           select: {
             id: true,
             name: true
+          }
+        },
+        charger: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        session: {
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true
           }
         }
       }
@@ -173,6 +232,19 @@ export const getReviewsForCharger = async (
               id: true,
               name: true
             }
+          },
+          charger: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          session: {
+            select: {
+              id: true,
+              startTime: true,
+              endTime: true
+            }
           }
         },
         skip,
@@ -183,7 +255,7 @@ export const getReviewsForCharger = async (
     ]);
 
     // Calculate average rating
-    const ratingSum = reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0);
+    const ratingSum = reviews.reduce((sum: number, review: any) => sum + review.rating, 0);
     const averageRating = total > 0 ? Number((ratingSum / total).toFixed(1)) : 0;
 
     const totalPages = Math.ceil(total / limit);
@@ -221,6 +293,21 @@ export const getReviewsByDriver = async (
   try {
     const skip = (page - 1) * limit;
 
+    // Check if driver exists
+    const driver = await prisma.user.findUnique({
+      where: { id: driverId }
+    });
+
+    if (!driver) {
+      return {
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'Driver not found'
+        }
+      };
+    }
+
     // Get reviews with pagination
     const [reviews, total] = await Promise.all([
       prisma.review.findMany({
@@ -237,6 +324,19 @@ export const getReviewsByDriver = async (
             select: {
               id: true,
               name: true
+            }
+          },
+          charger: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          session: {
+            select: {
+              id: true,
+              startTime: true,
+              endTime: true
             }
           }
         },
@@ -275,16 +375,16 @@ export const getReviewsByDriver = async (
  */
 export const updateReview = async (
   reviewId: number,
-  reviewerId: number,
+  driverId: number,
   rating?: number,
   comment?: string
 ): Promise<ServiceResponse<Review>> => {
   try {
-    // Check if review exists and belongs to the reviewer
+    // Check if review exists and belongs to the driver
     const existingReview = await prisma.review.findFirst({
       where: {
         id: reviewId,
-        reviewerId
+        driverId
       }
     });
 
@@ -320,15 +420,29 @@ export const updateReview = async (
       data,
       select: {
         id: true,
-        reviewerId: true,
-        reviewedUserId: true,
+        driverId: true,
+        chargerId: true,
+        sessionId: true,
         rating: true,
         comment: true,
         createdAt: true,
-        reviewer: {
+        driver: {
           select: {
             id: true,
             name: true
+          }
+        },
+        charger: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        session: {
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true
           }
         }
       }
@@ -359,7 +473,7 @@ export const deleteReview = async (
   isAdmin: boolean = false
 ): Promise<ServiceResponse<{ message: string }>> => {
   try {
-    // Check if review exists and user has permission to delete it
+    // Check if review exists
     const existingReview = await prisma.review.findUnique({
       where: { id: reviewId }
     });
@@ -374,8 +488,8 @@ export const deleteReview = async (
       };
     }
 
-    // Check permissions: user must be the reviewer or an admin
-    if (!isAdmin && existingReview.reviewerId !== userId) {
+    // Check permissions: user must be the driver who wrote the review or an admin
+    if (!isAdmin && existingReview.driverId !== userId) {
       return {
         success: false,
         error: {
@@ -439,12 +553,12 @@ export const getChargerReviewStats = async (chargerId: number): Promise<ServiceR
     });
 
     const totalReviews = reviews.length;
-    const ratingSum = reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0);
+    const ratingSum = reviews.reduce((sum: number, review: any) => sum + review.rating, 0);
     const averageRating = totalReviews > 0 ? Number((ratingSum / totalReviews).toFixed(1)) : 0;
 
     // Calculate rating distribution
     const ratingDistribution: { [key: number]: number } = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    reviews.forEach((review: { rating: number }) => {
+    reviews.forEach((review: any) => {
       ratingDistribution[review.rating] = (ratingDistribution[review.rating] || 0) + 1;
     });
 
@@ -469,85 +583,6 @@ export const getChargerReviewStats = async (chargerId: number): Promise<ServiceR
 };
 
 /**
- * Get reviews for a specific user
- */
-export const getReviewsForUser = async (
-  userId: number,
-  page: number = 1,
-  limit: number = 10
-): Promise<ServiceResponse<{ reviews: Review[]; total: number; averageRating: number; page: number; totalPages: number }>> => {
-  try {
-    const skip = (page - 1) * limit;
-
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-
-    if (!user) {
-      return {
-        success: false,
-        error: {
-          code: 'USER_NOT_FOUND',
-          message: 'User not found'
-        }
-      };
-    }
-
-    // Get reviews with pagination
-    const [reviews, total] = await Promise.all([
-      prisma.review.findMany({
-        where: { reviewedUserId: userId },
-        select: {
-          id: true,
-          reviewerId: true,
-          reviewedUserId: true,
-          rating: true,
-          comment: true,
-          createdAt: true,
-          reviewer: {
-            select: {
-              id: true,
-              name: true
-            }
-          }
-        },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.review.count({ where: { reviewedUserId: userId } })
-    ]);
-
-    // Calculate average rating
-    const ratingSum = reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0);
-    const averageRating = total > 0 ? Number((ratingSum / total).toFixed(1)) : 0;
-
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      success: true,
-      data: {
-        reviews: reviews as Review[],
-        total,
-        averageRating,
-        page,
-        totalPages
-      }
-    };
-  } catch (error) {
-    console.error('Get reviews for user error:', error);
-    return {
-      success: false,
-      error: {
-        code: 'INTERNAL_ERROR',
-        message: 'An error occurred while fetching reviews'
-      }
-    };
-  }
-};
-
-/**
  * Get review by ID
  */
 export const getReviewById = async (reviewId: number): Promise<ServiceResponse<Review>> => {
@@ -556,15 +591,29 @@ export const getReviewById = async (reviewId: number): Promise<ServiceResponse<R
       where: { id: reviewId },
       select: {
         id: true,
-        reviewerId: true,
-        reviewedUserId: true,
+        driverId: true,
+        chargerId: true,
+        sessionId: true,
         rating: true,
         comment: true,
         createdAt: true,
-        reviewer: {
+        driver: {
           select: {
             id: true,
             name: true
+          }
+        },
+        charger: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        session: {
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true
           }
         }
       }
@@ -611,15 +660,29 @@ export const getAllReviews = async (
       prisma.review.findMany({
         select: {
           id: true,
-          reviewerId: true,
-          reviewedUserId: true,
+          driverId: true,
+          chargerId: true,
+          sessionId: true,
           rating: true,
           comment: true,
           createdAt: true,
-          reviewer: {
+          driver: {
             select: {
               id: true,
               name: true
+            }
+          },
+          charger: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          session: {
+            select: {
+              id: true,
+              startTime: true,
+              endTime: true
             }
           }
         },

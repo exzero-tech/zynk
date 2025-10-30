@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createUserReview,
   getUserReviews,
+  getDriverReviews,
   getReview,
   updateUserReview,
   removeReview,
@@ -19,11 +20,18 @@ const router = Router();
 router.post('/', authenticateToken, createUserReview);
 
 /**
- * @route GET /reviews/user/:userId
- * @desc Get reviews for a specific user
+ * @route GET /reviews/charger/:id
+ * @desc Get reviews for a charger
  * @access Public
  */
-router.get('/user/:userId', getUserReviews);
+router.get('/charger/:id', getUserReviews);
+
+/**
+ * @route GET /reviews/driver/:id
+ * @desc Get reviews by driver
+ * @access Public
+ */
+router.get('/driver/:id', getDriverReviews);
 
 /**
  * @route GET /reviews/:id
