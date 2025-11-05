@@ -1,220 +1,129 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
-import { ThemedView } from '@/components/themed-view';
-import { ThemedText } from '@/components/themed-text';
+import { StyleSheet, View, Platform } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 interface MapCardProps {
   style?: any;
 }
 
 export function MapCard({ style }: MapCardProps) {
-  // Default center position (can be made dynamic later)
-  const initialRegion = {
-    latitude: 40.7128,
-    longitude: -74.0060,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
-  };
-
   return (
-    <ThemedView style={[styles.container, style]}>
-      <ThemedText type="subtitle" style={styles.title}>
-        Nearby Charging Stations
-      </ThemedText>
-
-      <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          initialRegion={initialRegion}
-          provider={PROVIDER_DEFAULT}
-          showsUserLocation={true}
-          showsMyLocationButton={true}
-          customMapStyle={darkMapStyle}
-        >
-          <Marker
-            coordinate={{
-              latitude: 40.7128,
-              longitude: -74.0060,
-            }}
-            title="Sample Charging Station"
-            description="Available • Fast Charging"
-          />
-        </MapView>
-      </View>
-    </ThemedView>
+    <View style={[styles.container, style]}>
+      <MapView
+        style={styles.map}
+        provider={PROVIDER_GOOGLE}
+        initialRegion={{
+          latitude: 40.7128,
+          longitude: -74.0060,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        }}
+        userInterfaceStyle="dark"
+        mapType={Platform.OS === 'android' ? 'standard' : 'standard'}
+        showsUserLocation={false}
+        showsMyLocationButton={false}
+        showsCompass={false}
+        toolbarEnabled={false}
+        customMapStyle={darkMapStyle}
+      >
+        <Marker
+          coordinate={{
+            latitude: 40.7128,
+            longitude: -74.0060,
+          }}
+          title="Sample Charging Station"
+          description="Available • Fast Charging"
+        />
+      </MapView>
+    </View>
   );
 }
 
-// Dark theme map style
+// Ultra dark theme like Uber - pure black and minimal colors
 const darkMapStyle = [
   {
     elementType: 'geometry',
-    stylers: [
-      {
-        color: '#242f3e',
-      },
-    ],
+    stylers: [{ color: '#0a0a0a' }],
   },
   {
     elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#746855',
-      },
-    ],
+    stylers: [{ color: '#707070' }],
   },
   {
     elementType: 'labels.text.stroke',
-    stylers: [
-      {
-        color: '#242f3e',
-      },
-    ],
+    stylers: [{ color: '#0a0a0a' }],
   },
   {
-    featureType: 'administrative.locality',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#d59563',
-      },
-    ],
+    featureType: 'administrative',
+    elementType: 'geometry',
+    stylers: [{ color: '#1f1f1f' }],
+  },
+  {
+    featureType: 'administrative.land_parcel',
+    elementType: 'labels',
+    stylers: [{ visibility: 'off' }],
   },
   {
     featureType: 'poi',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#d59563',
-      },
-    ],
+    elementType: 'labels.text',
+    stylers: [{ visibility: 'off' }],
   },
   {
-    featureType: 'poi.park',
-    elementType: 'geometry',
-    stylers: [
-      {
-        color: '#263c3f',
-      },
-    ],
-  },
-  {
-    featureType: 'poi.park',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#6b9a76',
-      },
-    ],
+    featureType: 'poi.business',
+    stylers: [{ visibility: 'off' }],
   },
   {
     featureType: 'road',
     elementType: 'geometry',
-    stylers: [
-      {
-        color: '#38414e',
-      },
-    ],
+    stylers: [{ color: '#202020' }],
   },
   {
     featureType: 'road',
-    elementType: 'geometry.stroke',
-    stylers: [
-      {
-        color: '#212a37',
-      },
-    ],
+    elementType: 'labels.icon',
+    stylers: [{ visibility: 'off' }],
   },
   {
-    featureType: 'road',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#9ca5b3',
-      },
-    ],
+    featureType: 'road.arterial',
+    elementType: 'geometry',
+    stylers: [{ color: '#252525' }],
   },
   {
     featureType: 'road.highway',
     elementType: 'geometry',
-    stylers: [
-      {
-        color: '#746855',
-      },
-    ],
+    stylers: [{ color: '#2f2f2f' }],
   },
   {
-    featureType: 'road.highway',
-    elementType: 'geometry.stroke',
-    stylers: [
-      {
-        color: '#1f2835',
-      },
-    ],
+    featureType: 'road.highway.controlled_access',
+    elementType: 'geometry',
+    stylers: [{ color: '#333333' }],
   },
   {
-    featureType: 'road.highway',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#f3d19c',
-      },
-    ],
+    featureType: 'road.local',
+    elementType: 'labels',
+    stylers: [{ visibility: 'off' }],
   },
   {
     featureType: 'transit',
-    elementType: 'geometry',
-    stylers: [
-      {
-        color: '#2f3948',
-      },
-    ],
-  },
-  {
-    featureType: 'transit.station',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#d59563',
-      },
-    ],
+    stylers: [{ visibility: 'off' }],
   },
   {
     featureType: 'water',
     elementType: 'geometry',
-    stylers: [
-      {
-        color: '#17263c',
-      },
-    ],
+    stylers: [{ color: '#050505' }],
   },
   {
     featureType: 'water',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#515c6d',
-      },
-    ],
-  },
-  {
-    featureType: 'water',
-    elementType: 'labels.text.stroke',
-    stylers: [
-      {
-        color: '#17263c',
-      },
-    ],
+    elementType: 'labels.text',
+    stylers: [{ visibility: 'off' }],
   },
 ];
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 12,
-    padding: 16,
+    flex: 1,
     marginHorizontal: 20,
-    marginVertical: 10,
+    marginTop: 5,
+    marginBottom: 110,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -223,21 +132,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  mapContainer: {
-    height: 250,
-    borderRadius: 8,
     overflow: 'hidden',
+    borderRadius: 12,
   },
   map: {
-    height: '100%',
-    width: '100%',
-    borderRadius: 8,
+    flex: 1,
+    backgroundColor: '#333',
   },
 });

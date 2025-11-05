@@ -4,7 +4,7 @@ import { ThemedView } from '@/components/themed-view';
 import { SearchBar } from '@/components/search-bar';
 import { MapCard } from '@/components/map-card';
 
-export default function ExploreScreen() {
+function ExploreScreen() {
   const handleSearch = (query: string) => {
     console.log('Searching for:', query);
     // TODO: Implement search functionality
@@ -16,7 +16,7 @@ export default function ExploreScreen() {
         Explore
       </ThemedText>
       <SearchBar onSearch={handleSearch} />
-      <MapCard />
+      <MapCard style={styles.mapCard} />
     </ThemedView>
   );
 }
@@ -34,4 +34,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginLeft: 20,
   },
+  mapCard: {
+    flex: 1,
+  },
 });
+
+export default ExploreScreen;
