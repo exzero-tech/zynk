@@ -1,13 +1,28 @@
 import { StyleSheet } from 'react-native';
+import { useState } from 'react';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { SearchBar } from '@/components/search-bar';
 import { MapCard } from '@/components/map-card';
+import { FilterModal, FilterOptions } from '@/components/filter-modal';
 
 function ExploreScreen() {
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterOptions | null>(null);
+
   const handleSearch = (query: string) => {
     console.log('Searching for:', query);
     // TODO: Implement search functionality
+  };
+
+  const handleFilterPress = () => {
+    setFilterVisible(true);
+  };
+
+  const handleApplyFilters = (filters: FilterOptions) => {
+    setActiveFilters(filters);
+    console.log('Applied filters:', filters);
+    // TODO: Implement filter functionality
   };
 
   return (
@@ -15,8 +30,14 @@ function ExploreScreen() {
       <ThemedText type="title" style={styles.title}>
         Explore
       </ThemedText>
-      <SearchBar onSearch={handleSearch} />
+      <SearchBar onSearch={handleSearch} onFilterPress={handleFilterPress} />
       <MapCard style={styles.mapCard} />
+      
+      <FilterModal
+        visible={filterVisible}
+        onClose={() => setFilterVisible(false)}
+        onApplyFilters={handleApplyFilters}
+      />
     </ThemedView>
   );
 }

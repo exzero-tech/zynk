@@ -8,10 +8,11 @@ import { Colors } from '@/constants/theme';
 interface SearchBarProps {
   placeholder?: string;
   onSearch?: (query: string) => void;
+  onFilterPress?: () => void;
   style?: any;
 }
 
-export function SearchBar({ placeholder = "Search charging stations...", onSearch, style }: SearchBarProps) {
+export function SearchBar({ placeholder = "Search charging stations...", onSearch, onFilterPress, style }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const backgroundColor = useThemeColor({}, 'card');
   const textColor = useThemeColor({}, 'text');
@@ -28,8 +29,9 @@ export function SearchBar({ placeholder = "Search charging stations...", onSearc
   };
 
   const handleFilter = () => {
-    console.log('Filter button pressed');
-    // TODO: Implement filter functionality
+    if (onFilterPress) {
+      onFilterPress();
+    }
   };
 
   return (
