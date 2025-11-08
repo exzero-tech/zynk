@@ -1,8 +1,9 @@
-import { StyleSheet, View, TextInput, ScrollView, Pressable, Modal } from 'react-native';
+import { StyleSheet, View, ScrollView, Pressable, TextInput, Modal } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useState } from 'react';
+import { router } from 'expo-router';
 
 interface MapMarker {
   id: number;
@@ -278,7 +279,7 @@ export default function ExploreScreen() {
                   <ThemedText style={styles.rating}>{charger.rating}</ThemedText>
                 </View>
               </View>
-              <Pressable style={styles.viewButton}>
+              <Pressable style={styles.viewButton} onPress={() => router.push('/charger-details')}>
                 <ThemedText style={styles.viewButtonText}>View Details</ThemedText>
                 <IconSymbol name="chevron.right" size={16} color="#10B981" />
               </Pressable>
