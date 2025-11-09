@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, View } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ export default function ChargerDetailsScreen() {
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
+  const router = useRouter();
 
   // Parse the charger data from params
   const charger: DummyCharger = JSON.parse(params.charger as string);
@@ -37,8 +38,11 @@ export default function ChargerDetailsScreen() {
   };
 
   const handleStartCharging = () => {
-    // TODO: Implement charging logic
-    console.log('Start charging at:', charger.name);
+    // Navigate to charging session screen
+    router.push({
+      pathname: '/charging-session',
+      params: { charger: JSON.stringify(charger) }
+    });
   };
 
   const handleReserve = () => {
@@ -101,7 +105,7 @@ export default function ChargerDetailsScreen() {
               <View style={styles.detailRow}>
                 <MaterialIcons name="attach-money" size={18} color={textColor} />
                 <ThemedText style={styles.detailLabel}>Price:</ThemedText>
-                <ThemedText style={styles.detailValue}>Rs. {charger.pricePerHour}/hour</ThemedText>
+                <ThemedText style={styles.detailValue}>Rs. {charger.pricePerKwh}/kWh</ThemedText>
               </View>
             </View>
 

@@ -9,7 +9,7 @@ export interface DummyCharger {
   connectorType: 'TYPE1' | 'TYPE2' | 'CCS1' | 'CCS2' | 'CHADEMO' | 'TESLA' | 'GBT' | 'NACS' | 'THREE_PIN' | 'BLUE_COMMANDO';
   powerOutput: number;
   chargingSpeed: string;
-  pricePerHour: number;
+  pricePerKwh: number; // Changed from pricePerHour to pricePerKwh
   description?: string;
   vendor?: string;
 }
@@ -45,7 +45,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "CCS2",
     powerOutput: 150,
     chargingSpeed: "Ultra-Rapid (150+ kW)",
-    pricePerHour: 250.00,
+    pricePerKwh: 145.00,
     description: "Premium DC fast charging station with multiple connectors",
     vendor: "ChargeMaster Pro"
   },
@@ -59,7 +59,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TYPE2",
     powerOutput: 22,
     chargingSpeed: "Fast (7-22 kW)",
-    pricePerHour: 120.00,
+    pricePerKwh: 95.00,
     description: "Convenient Level 2 charging for daily commuters",
     vendor: "EV Lanka"
   },
@@ -73,7 +73,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TYPE2",
     powerOutput: 11,
     chargingSpeed: "Fast (7-22 kW)",
-    pricePerHour: 150.00,
+    pricePerKwh: 110.00,
     description: "Charge while you shop - mall parking available",
     vendor: "MallCharge"
   },
@@ -87,7 +87,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TESLA",
     powerOutput: 250,
     chargingSpeed: "Ultra-Rapid (150+ kW)",
-    pricePerHour: 300.00,
+    pricePerKwh: 150.00,
     description: "Tesla Supercharger - fastest charging available",
     vendor: "Tesla Energy"
   },
@@ -101,7 +101,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TYPE2",
     powerOutput: 7,
     chargingSpeed: "Slow (3-7 kW)",
-    pricePerHour: 80.00,
+    pricePerKwh: 80.00,
     description: "Public charging station for government employees",
     vendor: "Public Charge Lanka"
   },
@@ -115,7 +115,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TYPE2",
     powerOutput: 11,
     chargingSpeed: "Fast (7-22 kW)",
-    pricePerHour: 180.00,
+    pricePerKwh: 120.00,
     description: "Premium hotel charging with valet service",
     vendor: "Hotel Paradise"
   },
@@ -129,7 +129,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "THREE_PIN",
     powerOutput: 3,
     chargingSpeed: "Slow (3-7 kW)",
-    pricePerHour: 50.00,
+    pricePerKwh: 85.00,
     description: "Bring Your Own Charger - community shared station",
     vendor: "BYOC Lanka"
   },
@@ -143,7 +143,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "CHADEMO",
     powerOutput: 50,
     chargingSpeed: "Rapid (43-50 kW)",
-    pricePerHour: 200.00,
+    pricePerKwh: 135.00,
     description: "Combined fuel and EV charging station",
     vendor: "Lanka IOC"
   },
@@ -157,7 +157,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TYPE2",
     powerOutput: 22,
     chargingSpeed: "Fast (7-22 kW)",
-    pricePerHour: 90.00,
+    pricePerKwh: 90.00,
     description: "Student and staff charging facility",
     vendor: "USJP Facilities"
   },
@@ -171,7 +171,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TYPE2",
     powerOutput: 11,
     chargingSpeed: "Fast (7-22 kW)",
-    pricePerHour: 100.00,
+    pricePerKwh: 100.00,
     description: "Dedicated charging for apartment residents",
     vendor: "Palm Grove Management"
   },
@@ -185,7 +185,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "CCS2",
     powerOutput: 100,
     chargingSpeed: "Rapid (43-50 kW)",
-    pricePerHour: 220.00,
+    pricePerKwh: 140.00,
     description: "Highway charging for long distance travelers",
     vendor: "Highway Authority"
   },
@@ -199,7 +199,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TYPE2",
     powerOutput: 7,
     chargingSpeed: "Slow (3-7 kW)",
-    pricePerHour: 140.00,
+    pricePerKwh: 105.00,
     description: "Charge while enjoying coffee and snacks",
     vendor: "Star Cafe"
   },
@@ -213,7 +213,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TYPE2",
     powerOutput: 11,
     chargingSpeed: "Fast (7-22 kW)",
-    pricePerHour: 160.00,
+    pricePerKwh: 115.00,
     description: "Emergency vehicle charging facility",
     vendor: "Medical Center"
   },
@@ -227,7 +227,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TYPE2",
     powerOutput: 22,
     chargingSpeed: "Fast (7-22 kW)",
-    pricePerHour: 130.00,
+    pricePerKwh: 98.00,
     description: "Corporate office building charging",
     vendor: "World Trade Center"
   },
@@ -241,7 +241,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "CCS2",
     powerOutput: 75,
     chargingSpeed: "Rapid (43-50 kW)",
-    pricePerHour: 190.00,
+    pricePerKwh: 130.00,
     description: "Park and charge while taking train",
     vendor: "Railway Authority"
   },
@@ -255,7 +255,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TYPE2",
     powerOutput: 11,
     chargingSpeed: "Fast (7-22 kW)",
-    pricePerHour: 155.00,
+    pricePerKwh: 108.00,
     description: "Charge while grocery shopping",
     vendor: "Keells Super"
   },
@@ -269,7 +269,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TYPE2",
     powerOutput: 7,
     chargingSpeed: "Slow (3-7 kW)",
-    pricePerHour: 125.00,
+    pricePerKwh: 92.00,
     description: "Charge while working out",
     vendor: "Fitness First"
   },
@@ -283,7 +283,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "CHADEMO",
     powerOutput: 62,
     chargingSpeed: "Rapid (43-50 kW)",
-    pricePerHour: 210.00,
+    pricePerKwh: 138.00,
     description: "Quick charging for airport transfers",
     vendor: "Airport Services"
   },
@@ -297,7 +297,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "TYPE2",
     powerOutput: 11,
     chargingSpeed: "Fast (7-22 kW)",
-    pricePerHour: 135.00,
+    pricePerKwh: 102.00,
     description: "Bank branch customer charging",
     vendor: "Commercial Bank"
   },
@@ -311,7 +311,7 @@ export const dummyChargers: DummyCharger[] = [
     connectorType: "THREE_PIN",
     powerOutput: 3,
     chargingSpeed: "Slow (3-7 kW)",
-    pricePerHour: 60.00,
+    pricePerKwh: 88.00,
     description: "Traditional temple grounds charging",
     vendor: "Temple Management"
   }
