@@ -72,16 +72,57 @@ export default function HomeScreen() {
           {favouriteChargers.map((charger) => (
             <TouchableOpacity
               key={charger.id}
-              style={[styles.favouriteCard, { backgroundColor: tintColor }]}
+              style={[styles.favouriteCard, { backgroundColor: '#242424' }]}
               onPress={() => handleChargerPress(charger)}
             >
-              <ThemedText style={[styles.favouriteName, { color: textColor }]}>
-                {charger.name}
+              <ThemedView style={styles.cardContent}>
+                <ThemedText style={[styles.favouriteName, { color: textColor }]}>
+                  {charger.name}
+                </ThemedText>
+              </ThemedView>
+              <ThemedView style={styles.cardFooter}>
+                <ThemedView style={[styles.statusIndicator, { backgroundColor: charger.status === 'AVAILABLE' ? '#4CAF50' : charger.status === 'OCCUPIED' ? '#FF9800' : '#F44336' }]} />
+                <TouchableOpacity
+                  style={[styles.chargeButton, { backgroundColor: tintColor }]}
+                  onPress={() => handleChargerPress(charger)}
+                >
+                  <MaterialIcons name="bolt" size={16} color="#fff" />
+                  <ThemedText style={styles.chargeButtonText}>Charge</ThemedText>
+                </TouchableOpacity>
+              </ThemedView>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </ThemedView>
+
+      {/* Find Nearby Section */}
+      <ThemedView style={styles.section}>
+        <ThemedText style={[styles.sectionTitle, { color: textColor }]}>
+          Find Nearby
+        </ThemedText>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.favouritesScroll}
+        >
+          {[
+            { name: 'Parking', icon: 'local-parking' },
+            { name: 'Restaurants', icon: 'restaurant' },
+            { name: 'Restrooms', icon: 'wc' },
+            { name: 'Cafes', icon: 'coffee' },
+            { name: 'Supermarkets', icon: 'shopping-cart' },
+            { name: 'Malls', icon: 'shopping-bag' },
+            { name: 'Libraries', icon: 'book' },
+          ].map((amenity) => (
+            <TouchableOpacity
+              key={amenity.name}
+              style={[styles.nearbyCard, { backgroundColor: '#242424' }]}
+              onPress={() => console.log(`Navigate to ${amenity.name}`)}
+            >
+              <MaterialIcons name={amenity.icon as any} size={24} color={textColor} />
+              <ThemedText style={[styles.nearbyCardText, { color: textColor }]}>
+                {amenity.name}
               </ThemedText>
-              <ThemedText style={[styles.favouriteAddress, { color: textColor, opacity: 0.7 }]}>
-                {charger.address}
-              </ThemedText>
-              <ThemedView style={[styles.statusIndicator, { backgroundColor: charger.status === 'AVAILABLE' ? '#4CAF50' : charger.status === 'OCCUPIED' ? '#FF9800' : '#F44336' }]} />
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -157,7 +198,7 @@ const styles = StyleSheet.create({
   },
   bannerImage: {
     width: '100%',
-    height: 216,
+    height: 205,
     borderRadius: 20,
     transform: [{ scale: 1.05 }],
   },
@@ -176,8 +217,9 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   favouriteCard: {
-    width: 160,
-    padding: 16,
+    width: 140,
+    height: 148,
+    padding: 12,
     borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: {
@@ -187,6 +229,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
+    justifyContent: 'space-between',
+  },
+  cardContent: {
+    backgroundColor: 'transparent',
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    right: 12,
+    backgroundColor: 'transparent',
   },
   favouriteName: {
     fontSize: 16,
@@ -202,5 +258,42 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     alignSelf: 'flex-start',
+  },
+  chargeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 8,
+  },
+  chargeButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  nearbyCard: {
+    width: 100,
+    height: 80,
+    padding: 12,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nearbyCardText: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 4,
+    textAlign: 'center',
   },
 });
