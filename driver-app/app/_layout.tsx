@@ -29,6 +29,14 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="help-support" options={{ headerShown: false }} />
+        <Stack.Screen name="about" options={{ headerShown: false }} />
+        <Stack.Screen name="privacy-policy" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ headerShown: false }} />
+        <Stack.Screen name="charger-details" options={{ headerShown: false }} />
+        <Stack.Screen name="personal-info" options={{ headerShown: false }} />
+        <Stack.Screen name="my-vehicles" options={{ headerShown: false }} />
+        <Stack.Screen name="payment-methods" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
