@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import { useRouter } from 'expo-router';
 import { AmenityForm } from '@/components/amenity/AmenityForm';
 import { AppDispatch } from '@/store';
-// import { createAmenity } from '@/store/slices/amenity.slice'; // TODO: Create slice
+import { createAmenity } from '@/store/slices/amenity.slice';
 
 export default function AddAmenityScreen() {
   const dispatch = useDispatch<AppDispatch>();
@@ -12,8 +12,7 @@ export default function AddAmenityScreen() {
 
   const handleSubmit = async (data: { name: string; description: string; type: string; isPromoted: boolean }) => {
     try {
-      // await dispatch(createAmenity(data)).unwrap();
-      console.log('Adding amenity:', data);
+      await dispatch(createAmenity(data)).unwrap();
       Alert.alert('Success', `Amenity "${data.name}" added successfully!`);
       router.back();
     } catch (error) {

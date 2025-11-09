@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import { useRouter } from 'expo-router';
 import { AmenityForm } from '@/components/amenity/AmenityForm';
 import { AppDispatch } from '@/store';
-// import { editAmenity } from '@/store/slices/amenity.slice'; // TODO: Create slice
+import { editAmenity, removeAmenity } from '@/store/slices/amenity.slice';
 
 export default function EditAmenityScreen() {
   const dispatch = useDispatch<AppDispatch>();
@@ -20,8 +20,7 @@ export default function EditAmenityScreen() {
 
   const handleSubmit = async (data: { name: string; description: string; type: string; isPromoted: boolean }) => {
     try {
-      // await dispatch(editAmenity({ id: '1', updates: data })).unwrap();
-      console.log('Updating amenity:', data);
+      await dispatch(editAmenity({ id: '1', ...data })).unwrap(); // TODO: Get ID from navigation params
       Alert.alert('Success', `Amenity "${data.name}" updated successfully!`);
       router.back();
     } catch (error) {
@@ -36,13 +35,15 @@ export default function EditAmenityScreen() {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: () => {
-          console.log('Deleting amenity');
-          // TODO: Dispatch delete action
-          Alert.alert('Deleted', 'Amenity deleted successfully');
+          dispatch(removeAmenity('1')); // TODO: Get ID from navigation params
           router.back();
         }},
       ]
     );
+  };
+
+  const handleCancel = () => {
+    router.back();
   };
 
   return <AmenityForm initialData={amenityData} onSubmit={handleSubmit} onCancel={handleCancel} onDelete={handleDelete} />;

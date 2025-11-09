@@ -1,28 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSelector, useDispatch } from 'react-redux';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
-
-interface Amenity {
-  id: string;
-  name: string;
-  description: string;
-  type: string;
-  isPromoted: boolean;
-}
-
-// Dummy data
-const dummyAmenities: Amenity[] = [
-  { id: '1', name: 'Free WiFi', description: 'High-speed internet access', type: 'Connectivity', isPromoted: true },
-  { id: '2', name: 'EV Charging', description: 'Fast electric vehicle charging', type: 'Charging', isPromoted: false },
-  { id: '3', name: 'Restrooms', description: 'Clean and accessible facilities', type: 'Facility', isPromoted: true },
-];
+import { RootState, AppDispatch } from '@/store';
+import { fetchAmenities, removeAmenity, toggleAmenityPromotionThunk } from '@/store/slices/amenity.slice';
+import { Amenity } from '@/services/api/amenity.api';
 
 export default function AmenityListScreen() {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+  const { amenities, loading, error } = useSelector((state: RootState) => state.amenity);
   const tintColor = useThemeColor({}, 'tint');
+
+  useEffect(() => {
+    dispatch(fetchAmenities());
+  }, [dispatch]);
 
   const handleAddAmenity = () => {
     router.push('/add-amenity');
@@ -39,18 +34,14 @@ export default function AmenityListScreen() {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: () => {
-          console.log('Deleting amenity', id);
-          // TODO: Dispatch delete action
-          Alert.alert('Deleted', 'Amenity deleted successfully');
+          dispatch(removeAmenity(id));
         }},
       ]
     );
   };
 
   const handleTogglePromotion = (id: string) => {
-    // TODO: Dispatch toggle promotion action
-    console.log('Toggling promotion for amenity', id);
-    Alert.alert('Promotion Toggled', 'Amenity promotion status updated to attract more drivers!');
+    dispatch(toggleAmenityPromotionThunk(id));
   };
 
   const renderItem = ({ item }: { item: Amenity }) => (
@@ -80,7 +71,7 @@ export default function AmenityListScreen() {
         <ThemedText style={styles.addButtonText}>Add New Amenity</ThemedText>
       </TouchableOpacity>
       <FlatList
-        data={dummyAmenities}
+        data={amenities}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         style={styles.list}
