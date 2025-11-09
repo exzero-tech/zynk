@@ -1,5 +1,5 @@
-import ChargerListScreen from '@/screens/charger/ChargerListScreen';
+import AmenityListScreen from '@/screens/amenity/AmenityListScreen';
 
 export default function HomeScreen() {
-  return <ChargerListScreen />;
+  return <AmenityListScreen />;
 }
