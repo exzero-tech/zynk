@@ -50,90 +50,104 @@ export default function ChargerDetailsScreen() {
     console.log('Reserve charger:', charger.name);
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.push('/(tabs)');
+    }
+  };
+
   return (
     <>
       <Stack.Screen
         options={{
-          title: charger.name,
-          headerStyle: { backgroundColor },
-          headerTintColor: textColor,
+          headerShown: false,
         }}
       />
       <View style={[styles.container, { backgroundColor }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <MaterialIcons name="arrow-back" size={24} color={textColor} />
+          </TouchableOpacity>
+          <ThemedText type="title" style={styles.headerTitle}>
+            Charger Details
+          </ThemedText>
+          <View style={styles.placeholder} />
+        </View>
+
         <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
           <ThemedView style={styles.content}>
+            {/* Charger Name */}
+            <ThemedText style={[styles.chargerName, { color: textColor }]}>
+              {charger.name}
+            </ThemedText>
+
+            {/* Location */}
+            <View style={styles.locationRow}>
+              <MaterialIcons name="location-on" size={16} color={textColor} style={{ opacity: 0.6 }} />
+              <ThemedText style={[styles.address, { color: textColor }]}>{charger.address}</ThemedText>
+            </View>
+
             {/* Status Badge */}
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(charger.status) + '20' }]}>
-              <MaterialIcons
-                name={charger.status === 'AVAILABLE' ? 'check-circle' : 'info'}
-                size={16}
-                color={getStatusColor(charger.status)}
-              />
+              <View style={[styles.statusDot, { backgroundColor: getStatusColor(charger.status) }]} />
               <ThemedText style={[styles.statusText, { color: getStatusColor(charger.status) }]}>
                 {getStatusText(charger.status)}
               </ThemedText>
             </View>
 
-            {/* Address */}
-            <View style={styles.section}>
-              <MaterialIcons name="location-on" size={20} color={textColor} />
-              <ThemedText style={styles.address}>{charger.address}</ThemedText>
-            </View>
-
-            {/* Charging Details */}
-            <View style={styles.detailsCard}>
-              <ThemedText type="subtitle" style={styles.sectionTitle}>Charging Details</ThemedText>
-
-              <View style={styles.detailRow}>
-                <MaterialIcons name="bolt" size={18} color={textColor} />
-                <ThemedText style={styles.detailLabel}>Type:</ThemedText>
-                <ThemedText style={styles.detailValue}>{charger.type.replace('_', ' ')}</ThemedText>
-              </View>
-
-              <View style={styles.detailRow}>
-                <MaterialIcons name="power" size={18} color={textColor} />
-                <ThemedText style={styles.detailLabel}>Power:</ThemedText>
-                <ThemedText style={styles.detailValue}>{charger.powerOutput} kW</ThemedText>
-              </View>
-
-              <View style={styles.detailRow}>
-                <MaterialIcons name="speed" size={18} color={textColor} />
-                <ThemedText style={styles.detailLabel}>Speed:</ThemedText>
-                <ThemedText style={styles.detailValue}>{charger.chargingSpeed}</ThemedText>
-              </View>
-
-              <View style={styles.detailRow}>
-                <MaterialIcons name="attach-money" size={18} color={textColor} />
-                <ThemedText style={styles.detailLabel}>Price:</ThemedText>
-                <ThemedText style={styles.detailValue}>Rs. {charger.pricePerKwh}/kWh</ThemedText>
-              </View>
-            </View>
-
-            {/* Connector Type */}
-            <View style={styles.detailsCard}>
-              <ThemedText type="subtitle" style={styles.sectionTitle}>Connector</ThemedText>
-              <View style={styles.detailRow}>
-                <MaterialIcons name="cable" size={18} color={textColor} />
-                <ThemedText style={styles.detailValue}>{charger.connectorType}</ThemedText>
-              </View>
-            </View>
-
-            {/* Vendor */}
-            {charger.vendor && (
-              <View style={styles.detailsCard}>
-                <ThemedText type="subtitle" style={styles.sectionTitle}>Provider</ThemedText>
-                <View style={styles.detailRow}>
-                  <MaterialIcons name="business" size={18} color={textColor} />
-                  <ThemedText style={styles.detailValue}>{charger.vendor}</ThemedText>
+            {/* Details Grid */}
+            <View style={[styles.detailsCard, { backgroundColor: '#242424' }]}>
+              <View style={styles.detailsGrid}>
+                <View style={styles.detailItem}>
+                  <ThemedText style={[styles.detailLabel, { color: textColor }]}>Type</ThemedText>
+                  <ThemedText style={[styles.detailValue, { color: textColor }]}>
+                    {charger.type.replace('_', ' ')}
+                  </ThemedText>
                 </View>
+
+                <View style={styles.detailItem}>
+                  <ThemedText style={[styles.detailLabel, { color: textColor }]}>Power</ThemedText>
+                  <ThemedText style={[styles.detailValue, { color: textColor }]}>
+                    {charger.powerOutput} kW
+                  </ThemedText>
+                </View>
+
+                <View style={styles.detailItem}>
+                  <ThemedText style={[styles.detailLabel, { color: textColor }]}>Connector</ThemedText>
+                  <ThemedText style={[styles.detailValue, { color: textColor }]}>
+                    {charger.connectorType}
+                  </ThemedText>
+                </View>
+
+                <View style={styles.detailItem}>
+                  <ThemedText style={[styles.detailLabel, { color: textColor }]}>Price</ThemedText>
+                  <ThemedText style={[styles.detailValue, { color: tintColor }]}>
+                    Rs. {charger.pricePerKwh}/kWh
+                  </ThemedText>
+                </View>
+              </View>
+            </View>
+
+            {/* Provider Info */}
+            {charger.vendor && (
+              <View style={[styles.infoCard, { backgroundColor: '#242424' }]}>
+                <ThemedText style={[styles.infoLabel, { color: textColor }]}>Provider</ThemedText>
+                <ThemedText style={[styles.infoValue, { color: textColor }]}>
+                  {charger.vendor}
+                </ThemedText>
               </View>
             )}
 
             {/* Description */}
             {charger.description && (
-              <View style={styles.detailsCard}>
-                <ThemedText type="subtitle" style={styles.sectionTitle}>Description</ThemedText>
-                <ThemedText style={styles.description}>{charger.description}</ThemedText>
+              <View style={[styles.infoCard, { backgroundColor: '#242424' }]}>
+                <ThemedText style={[styles.infoLabel, { color: textColor }]}>About</ThemedText>
+                <ThemedText style={[styles.description, { color: textColor }]}>
+                  {charger.description}
+                </ThemedText>
               </View>
             )}
 
@@ -176,6 +190,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+    width: 40,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+    marginLeft: -40, // Offset the back button width
+  },
+  placeholder: {
+    width: 40,
+  },
   scrollContainer: {
     flex: 1,
   },
@@ -183,62 +219,107 @@ const styles = StyleSheet.create({
     paddingBottom: 100, // Space for fixed buttons
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  chargerName: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 8,
+    lineHeight: 34,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 20,
+  },
+  address: {
+    fontSize: 14,
+    opacity: 0.7,
+    lineHeight: 20,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 20,
-    marginBottom: 16,
+    marginBottom: 24,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 8,
   },
   statusText: {
     fontSize: 14,
     fontWeight: '600',
-    marginLeft: 6,
-  },
-  section: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  address: {
-    fontSize: 16,
-    marginLeft: 8,
-    flex: 1,
+    lineHeight: 20,
   },
   detailsCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  detailRow: {
+  detailsGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
+    flexWrap: 'wrap',
+    gap: 20,
+  },
+  detailItem: {
+    width: '45%',
   },
   detailLabel: {
-    fontSize: 16,
-    marginLeft: 8,
-    minWidth: 60,
+    fontSize: 13,
+    opacity: 0.6,
+    marginBottom: 6,
+    lineHeight: 18,
   },
   detailValue: {
     fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 8,
-    flex: 1,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  infoCard: {
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  infoLabel: {
+    fontSize: 13,
+    opacity: 0.6,
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  infoValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 22,
   },
   description: {
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 22,
+    opacity: 0.8,
   },
   buttonSpacer: {
     height: 20,
