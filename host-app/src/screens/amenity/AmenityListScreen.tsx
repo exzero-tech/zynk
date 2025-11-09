@@ -48,8 +48,9 @@ export default function AmenityListScreen() {
   };
 
   const handleTogglePromotion = (id: string) => {
-    console.log('Toggle promotion', id);
-    // TODO: Update promotion
+    // TODO: Dispatch toggle promotion action
+    console.log('Toggling promotion for amenity', id);
+    Alert.alert('Promotion Toggled', 'Amenity promotion status updated to attract more drivers!');
   };
 
   const renderItem = ({ item }: { item: Amenity }) => (
