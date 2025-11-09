@@ -14,7 +14,7 @@ export default function HomeScreen() {
   const router = useRouter();
 
   // TODO: replace with real user name from auth/context
-  const userName = 'Alex';
+  const userName = 'Shehan';
 
   // Select first 5 chargers as favourites for demo
   const favouriteChargers = dummyChargers.slice(0, 5);
@@ -64,7 +64,7 @@ export default function HomeScreen() {
               Hello, {userName}
             </ThemedText>
             <ThemedText style={[styles.greetingSubtext, { color: textColor }]}>
-              Welcome to ZYNK
+              Welcome to ZYNK!
             </ThemedText>
           </View>
         </View>
@@ -105,7 +105,6 @@ export default function HomeScreen() {
                 </ThemedText>
               </ThemedView>
               <ThemedView style={styles.cardFooter}>
-                <ThemedView style={[styles.statusIndicator, { backgroundColor: charger.status === 'AVAILABLE' ? '#4CAF50' : charger.status === 'OCCUPIED' ? '#FF9800' : '#F44336' }]} />
                 <TouchableOpacity
                   style={[styles.chargeButton, { backgroundColor: tintColor }]}
                   onPress={() => handleChargerPress(charger)}
@@ -261,7 +260,7 @@ const styles = StyleSheet.create({
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     position: 'absolute',
     bottom: 12,
     left: 12,
