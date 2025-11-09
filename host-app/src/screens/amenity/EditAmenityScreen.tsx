@@ -29,9 +29,21 @@ export default function EditAmenityScreen() {
     }
   };
 
-  const handleCancel = () => {
-    router.back();
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Amenity',
+      'Are you sure you want to delete this amenity?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => {
+          console.log('Deleting amenity');
+          // TODO: Dispatch delete action
+          Alert.alert('Deleted', 'Amenity deleted successfully');
+          router.back();
+        }},
+      ]
+    );
   };
 
-  return <AmenityForm initialData={amenityData} onSubmit={handleSubmit} onCancel={handleCancel} />;
+  return <AmenityForm initialData={amenityData} onSubmit={handleSubmit} onCancel={handleCancel} onDelete={handleDelete} />;
 }

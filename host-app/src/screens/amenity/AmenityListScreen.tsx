@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
@@ -33,8 +33,18 @@ export default function AmenityListScreen() {
   };
 
   const handleDelete = (id: string) => {
-    console.log('Delete amenity', id);
-    // TODO: Show confirmation and delete
+    Alert.alert(
+      'Delete Amenity',
+      'Are you sure you want to delete this amenity?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => {
+          console.log('Deleting amenity', id);
+          // TODO: Dispatch delete action
+          Alert.alert('Deleted', 'Amenity deleted successfully');
+        }},
+      ]
+    );
   };
 
   const handleTogglePromotion = (id: string) => {

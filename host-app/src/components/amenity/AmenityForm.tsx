@@ -15,11 +15,12 @@ interface AmenityFormProps {
   initialData?: Partial<AmenityFormData>;
   onSubmit: (data: AmenityFormData) => void;
   onCancel?: () => void;
+  onDelete?: () => void;
 }
 
 const amenityTypes = ['Connectivity', 'Charging', 'Facility', 'Food', 'Entertainment', 'Other'];
 
-export function AmenityForm({ initialData = {}, onSubmit, onCancel }: AmenityFormProps) {
+export function AmenityForm({ initialData = {}, onSubmit, onCancel, onDelete }: AmenityFormProps) {
   const [name, setName] = useState(initialData.name || '');
   const [description, setDescription] = useState(initialData.description || '');
   const [type, setType] = useState(initialData.type || amenityTypes[0]);
@@ -94,6 +95,11 @@ export function AmenityForm({ initialData = {}, onSubmit, onCancel }: AmenityFor
       </ThemedView>
 
       <ThemedView style={styles.buttonContainer}>
+        {onDelete && (
+          <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={onDelete}>
+            <ThemedText style={styles.deleteButtonText}>Delete Amenity</ThemedText>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onCancel}>
           <ThemedText style={styles.cancelButtonText}>Cancel</ThemedText>
         </TouchableOpacity>
@@ -152,13 +158,21 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
   },
   button: {
     padding: 15,
     borderRadius: 8,
-    flex: 1,
+    minWidth: 100,
     marginHorizontal: 5,
+    marginVertical: 5,
     alignItems: 'center',
+  },
+  deleteButton: {
+    backgroundColor: '#FF6B6B',
+  },
+  deleteButtonText: {
+    color: '#FFFFFF',
   },
   cancelButton: {
     backgroundColor: 'transparent',
