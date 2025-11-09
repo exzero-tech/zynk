@@ -9,6 +9,7 @@ interface FilterModalProps {
   visible: boolean;
   onClose: () => void;
   onApplyFilters: (filters: FilterOptions) => void;
+  currentFilters?: FilterOptions | null;
 }
 
 export interface FilterOptions {
@@ -30,9 +31,11 @@ const AMENITIES = [
   '☕ Coffee Shop',
   '🔌 EV Lounge',
   '🏪 Convenience Store',
+  '🏬 Malls',
+  '📚 Libraries',
 ];
 
-export function FilterModal({ visible, onClose, onApplyFilters }: FilterModalProps) {
+export function FilterModal({ visible, onClose, onApplyFilters, currentFilters }: FilterModalProps) {
   const [chargerSpeed, setChargerSpeed] = useState<string[]>([]);
   const [socketType, setSocketType] = useState<string[]>([]);
   const [availability, setAvailability] = useState<string>('All');
@@ -41,6 +44,16 @@ export function FilterModal({ visible, onClose, onApplyFilters }: FilterModalPro
   const backgroundColor = useThemeColor({}, 'background');
   const cardColor = useThemeColor({}, 'card');
   const tintColor = useThemeColor({}, 'tint');
+
+  // Sync with currentFilters when modal opens
+  React.useEffect(() => {
+    if (visible && currentFilters) {
+      setChargerSpeed(currentFilters.chargerSpeed || []);
+      setSocketType(currentFilters.socketType || []);
+      setAvailability(currentFilters.availability || 'All');
+      setAmenities(currentFilters.amenities || []);
+    }
+  }, [visible, currentFilters]);
 
   const toggleSelection = (item: string, list: string[], setList: (list: string[]) => void) => {
     if (list.includes(item)) {

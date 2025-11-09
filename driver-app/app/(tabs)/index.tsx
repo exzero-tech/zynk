@@ -26,6 +26,30 @@ export default function HomeScreen() {
     });
   };
 
+  const handleNearbyPress = (amenityName: string) => {
+    // Map amenity names to filter format
+    const amenityMap: Record<string, string> = {
+      'Parking': '🅿️ Parking',
+      'Restaurants': '🍽️ Restaurant',
+      'Restrooms': '🚻 Restrooms',
+      'Cafes': '☕ Coffee Shop',
+      'Supermarkets': '🏪 Convenience Store',
+      'Malls': '🏬 Malls',
+      'Libraries': '📚 Libraries',
+    };
+
+    const filterAmenity = amenityMap[amenityName];
+    
+    // Navigate to explore tab with the filter applied
+    router.push({
+      pathname: '/(tabs)/explore',
+      params: { 
+        applyFilter: 'true',
+        amenity: filterAmenity 
+      }
+    });
+  };
+
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}> 
       {/* Top bar: Avatar, Greeting, and Notification */}
@@ -117,7 +141,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               key={amenity.name}
               style={[styles.nearbyCard, { backgroundColor: '#242424' }]}
-              onPress={() => console.log(`Navigate to ${amenity.name}`)}
+              onPress={() => handleNearbyPress(amenity.name)}
             >
               <MaterialIcons name={amenity.icon as any} size={24} color={textColor} />
               <ThemedText style={[styles.nearbyCardText, { color: textColor }]}>
