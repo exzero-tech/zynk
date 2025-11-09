@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -20,16 +21,15 @@ const dummyAmenities: Amenity[] = [
 ];
 
 export default function AmenityListScreen() {
+  const router = useRouter();
   const tintColor = useThemeColor({}, 'tint');
 
   const handleAddAmenity = () => {
-    console.log('Add amenity');
-    // TODO: Navigate to add screen
+    router.push('/add-amenity');
   };
 
   const handleEdit = (id: string) => {
-    console.log('Edit amenity', id);
-    // TODO: Navigate to edit screen
+    router.push('/edit-amenity');
   };
 
   const handleDelete = (id: string) => {
