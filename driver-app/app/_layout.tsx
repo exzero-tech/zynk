@@ -37,6 +37,7 @@ export default function RootLayout() {
         <Stack.Screen name="personal-info" options={{ headerShown: false }} />
         <Stack.Screen name="my-vehicles" options={{ headerShown: false }} />
         <Stack.Screen name="payment-methods" options={{ headerShown: false }} />
+        <Stack.Screen name="charging-session" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
