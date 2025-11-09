@@ -13,9 +13,9 @@ export default function ProfileScreen() {
   const router = useRouter();
 
   // TODO: Replace with real user data from auth/context
-  const userName = 'John Doe';
-  const userEmail = 'john.doe@zynk.com';
-  const userPhone = '+94 77-123-4567';
+  const userName = 'Jehan Fernando';
+  const userEmail = 'jehanfernando@gmail.com';
+  const userPhone = '+94 77-153-3267';
 
   const menuItems = [
     {

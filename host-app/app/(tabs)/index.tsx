@@ -13,14 +13,14 @@ export default function HomeScreen() {
   const router = useRouter();
 
   // TODO: replace with real user name from auth/context
-  const userName = 'Admin';
+  const userName = 'Jehan';
 
   // TODO: Replace with real data from backend
   const stats = {
     activeChargers: 1,
     totalChargers: 2,
     todayEarnings: 1250.00,
-    activeSessions: 2,
+    activeSessions: 1,
   };
 
   // TODO: Replace with real reservations from backend

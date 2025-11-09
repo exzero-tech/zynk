@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
@@ -10,7 +10,7 @@ export default function EarningsScreen() {
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
 
-  const totalEarnings = 125450.50;
+  const totalEarnings = 86594.50;
   const thisMonth = 28750.00;
   const thisWeek = 6500.00;
   const today = 1250.00;
@@ -28,7 +28,7 @@ export default function EarningsScreen() {
     <ThemedView style={[styles.container, { backgroundColor }]}>
       {/* Page Title */}
       <View style={styles.header}>
-        <ThemedText style={[styles.pageTitle, { color: textColor }]}>
+        <ThemedText type="title" style={[styles.pageTitle, { color: textColor }]}>
           Earnings
         </ThemedText>
       </View>
@@ -131,50 +131,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 50,
   },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 20,
+  header: {
     marginHorizontal: 20,
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 24,
   },
-  leftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  avatarText: {
-    fontSize: 20,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  greetingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  greetingMain: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  greetingSubtext: {
-    fontSize: 15,
-    opacity: 0.6,
-    fontWeight: '400',
-  },
-  notifyButton: {
-    padding: 8,
+  pageTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    letterSpacing: -0.5,
+    lineHeight: 38,
   },
   totalCard: {
     marginHorizontal: 20,

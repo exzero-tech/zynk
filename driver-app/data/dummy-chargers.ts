@@ -12,6 +12,7 @@ export interface DummyCharger {
   pricePerKwh: number; // Changed from pricePerHour to pricePerKwh
   description?: string;
   vendor?: string;
+  amenities?: string[];
 }
 
 // Battaramulla coordinates (Sri Lanka)
@@ -47,7 +48,8 @@ export const dummyChargers: DummyCharger[] = [
     chargingSpeed: "Ultra-Rapid (150+ kW)",
     pricePerKwh: 145.00,
     description: "Premium DC fast charging station with multiple connectors",
-    vendor: "ChargeMaster Pro"
+    vendor: "ChargeMaster Pro",
+    amenities: ["WiFi", "Restrooms", "Cafe", "Covered Parking", "24/7 Access"]
   },
   {
     id: 2,
@@ -75,7 +77,8 @@ export const dummyChargers: DummyCharger[] = [
     chargingSpeed: "Fast (7-22 kW)",
     pricePerKwh: 110.00,
     description: "Charge while you shop - mall parking available",
-    vendor: "MallCharge"
+    vendor: "MallCharge",
+    amenities: ["Shopping Mall", "Food Court", "Restrooms", "Security"]
   },
   {
     id: 4,

@@ -47,6 +47,42 @@ export default function ChargerListScreen() {
     },
   ];
 
+  // TODO: Replace with real confirmed reservations from backend
+  const confirmedReservations = [
+    {
+      id: '4',
+      userName: 'Sandun Wijesinghe',
+      chargerName: 'Colombo Station - Connector 1',
+      reservedTime: 'Nov 10, 10:00 AM - 12:00 PM',
+      vehicleType: 'Audi e-tron',
+      status: 'Confirmed',
+    },
+    {
+      id: '5',
+      userName: 'Dilani Rajapaksa',
+      chargerName: 'Kandy Road Station - Connector 1',
+      reservedTime: 'Nov 10, 2:00 PM - 4:00 PM',
+      vehicleType: 'Hyundai Ioniq 5',
+      status: 'Confirmed',
+    },
+    {
+      id: '6',
+      userName: 'Ruwan Kumara',
+      chargerName: 'Colombo Station - Connector 1',
+      reservedTime: 'Nov 11, 9:00 AM - 11:00 AM',
+      vehicleType: 'MG ZS EV',
+      status: 'Confirmed',
+    },
+    {
+      id: '7',
+      userName: 'Priya Jayawardena',
+      chargerName: 'Kandy Road Station - Connector 1',
+      reservedTime: 'Nov 11, 3:00 PM - 5:00 PM',
+      vehicleType: 'Tesla Model Y',
+      status: 'Confirmed',
+    },
+  ];
+
   useEffect(() => {
     dispatch(fetchChargers());
   }, [dispatch]);
@@ -98,7 +134,7 @@ export default function ChargerListScreen() {
     <ThemedView style={[styles.container, { backgroundColor }]}>
       {/* Title and Add Button Header */}
       <View style={styles.header}>
-        <ThemedText style={[styles.pageTitle, { color: textColor }]}>
+        <ThemedText type="title" style={[styles.pageTitle, { color: textColor }]}>
           Chargers
         </ThemedText>
         <TouchableOpacity 
@@ -301,15 +337,51 @@ export default function ChargerListScreen() {
         {/* Reservations Tab */}
         {activeTab === 'reservations' && (
           <ThemedView style={styles.section}>
-            <View style={[styles.emptyCard, { backgroundColor: '#242424' }]}>
-              <MaterialIcons name="event" size={48} color={textColor} style={{ opacity: 0.3 }} />
-              <ThemedText style={[styles.emptyText, { color: textColor }]}>
-                No reservations
-              </ThemedText>
-              <ThemedText style={[styles.emptySubtext, { color: textColor }]}>
-                Upcoming reservations will appear here
-              </ThemedText>
-            </View>
+            {confirmedReservations.length === 0 ? (
+              <View style={[styles.emptyCard, { backgroundColor: '#242424' }]}>
+                <MaterialIcons name="event" size={48} color={textColor} style={{ opacity: 0.3 }} />
+                <ThemedText style={[styles.emptyText, { color: textColor }]}>
+                  No reservations
+                </ThemedText>
+                <ThemedText style={[styles.emptySubtext, { color: textColor }]}>
+                  Upcoming reservations will appear here
+                </ThemedText>
+              </View>
+            ) : (
+              confirmedReservations.map((reservation) => (
+                <View 
+                  key={reservation.id} 
+                  style={[styles.reservationCard, { backgroundColor: '#242424' }]}
+                >
+                  <View style={styles.reservationContent}>
+                    <View style={styles.reservationLeft}>
+                      <View style={[styles.userAvatar, { backgroundColor: tintColor + '20' }]}>
+                        <ThemedText style={[styles.userAvatarText, { color: tintColor }]}>
+                          {reservation.userName[0]}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.reservationInfo}>
+                        <ThemedText style={[styles.userName, { color: textColor }]}>
+                          {reservation.userName}
+                        </ThemedText>
+                        <ThemedText style={[styles.reservationLocation, { color: textColor }]}>
+                          {reservation.chargerName}
+                        </ThemedText>
+                        <ThemedText style={[styles.reservationTime, { color: textColor }]}>
+                          {reservation.reservedTime}
+                        </ThemedText>
+                      </View>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: tintColor + '20' }]}>
+                      <View style={[styles.statusDot, { backgroundColor: tintColor }]} />
+                      <ThemedText style={[styles.statusText, { color: tintColor }]}>
+                        {reservation.status}
+                      </ThemedText>
+                    </View>
+                  </View>
+                </View>
+              ))
+            )}
           </ThemedView>
         )}
 
@@ -379,7 +451,7 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     fontSize: 32,
-    fontWeight: '800',
+    fontWeight: 'bold',
     letterSpacing: -0.5,
     lineHeight: 38,
   },
@@ -617,10 +689,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+    lineHeight: 22,
+  },
+  reservationLocation: {
+    fontSize: 14,
+    opacity: 0.8,
+    marginBottom: 2,
+    lineHeight: 20,
   },
   reservationTime: {
     fontSize: 13,
     opacity: 0.6,
+    lineHeight: 18,
   },
   spacer: {
     height: 100,
