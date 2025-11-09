@@ -35,6 +35,7 @@ function AppContent() {
         <Stack.Screen name="edit-amenity" options={{ headerShown: false }} />
         <Stack.Screen name="add-charger" options={{ headerShown: false }} />
         <Stack.Screen name="edit-charger" options={{ headerShown: false }} />
+        <Stack.Screen name="reservation-details" options={{ headerShown: false, presentation: 'card' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />

@@ -10,8 +10,6 @@ export default function EarningsScreen() {
   const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
 
-  // TODO: replace with real user name and earnings data from backend
-  const userName = 'Admin';
   const totalEarnings = 125450.50;
   const thisMonth = 28750.00;
   const thisWeek = 6500.00;
@@ -28,26 +26,11 @@ export default function EarningsScreen() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
-      {/* Top bar: Avatar, Greeting, and Notification */}
-      <View style={styles.topBar}>
-        <View style={styles.leftSection}>
-          <TouchableOpacity style={[styles.avatar, { backgroundColor: tintColor + '15' }]}>
-            <ThemedText style={[styles.avatarText, { color: tintColor }]}>{userName[0]}</ThemedText>
-          </TouchableOpacity>
-
-          <View style={styles.greetingContainer}>
-            <ThemedText style={[styles.greetingMain, { color: textColor }]}>
-              Hello, {userName}
-            </ThemedText>
-            <ThemedText style={[styles.greetingSubtext, { color: textColor }]}>
-              Track Your Earnings
-            </ThemedText>
-          </View>
-        </View>
-
-        <TouchableOpacity style={styles.notifyButton} accessibilityLabel="Notifications">
-          <MaterialIcons name="notifications-none" size={26} color={textColor} />
-        </TouchableOpacity>
+      {/* Page Title */}
+      <View style={styles.header}>
+        <ThemedText style={[styles.pageTitle, { color: textColor }]}>
+          Earnings
+        </ThemedText>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -219,6 +202,7 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: 'bold',
     marginTop: 8,
+    lineHeight: 42,
   },
   section: {
     marginHorizontal: 20,

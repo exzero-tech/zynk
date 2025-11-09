@@ -4,13 +4,19 @@ export interface Charger {
   id: string;
   name: string;
   location: string;
-  status: 'available' | 'offline' | 'maintenance';
+  type: 'Level 1' | 'Level 2' | 'DC Fast';
+  powerOutput: number;
+  pricePerKwh: number;
+  status: 'AVAILABLE' | 'OCCUPIED' | 'OFFLINE' | 'MAINTENANCE';
 }
 
 export interface CreateChargerRequest {
   name: string;
   location: string;
-  status: 'available' | 'offline' | 'maintenance';
+  type: 'Level 1' | 'Level 2' | 'DC Fast';
+  powerOutput: number;
+  pricePerKwh: number;
+  status: 'AVAILABLE' | 'OCCUPIED' | 'OFFLINE' | 'MAINTENANCE';
 }
 
 export interface UpdateChargerRequest extends Partial<CreateChargerRequest> {
@@ -18,11 +24,26 @@ export interface UpdateChargerRequest extends Partial<CreateChargerRequest> {
 }
 
 export const getChargers = async (): Promise<Charger[]> => {
-  // Dummy implementation - return static data
+  // Dummy implementation - return realistic Sri Lankan data
   return [
-    { id: '1', name: 'Charger A', status: 'available', location: 'Downtown' },
-    { id: '2', name: 'Charger B', status: 'offline', location: 'Airport' },
-    { id: '3', name: 'Charger C', status: 'maintenance', location: 'Mall' },
+    {
+      id: '1',
+      name: 'Colombo Station - Connector 1',
+      location: 'Kollupitiya, Colombo 03',
+      type: 'DC Fast',
+      powerOutput: 60,
+      pricePerKwh: 145,
+      status: 'AVAILABLE',
+    },
+    {
+      id: '2',
+      name: 'Kandy Road Station - Connector 1',
+      location: 'Kadawatha, Gampaha',
+      type: 'Level 2',
+      powerOutput: 22,
+      pricePerKwh: 115,
+      status: 'OCCUPIED',
+    },
   ];
   // const response = await fetch(`${API_BASE_URL}/chargers`);
   // if (!response.ok) throw new Error('Failed to fetch chargers');
@@ -45,7 +66,15 @@ export const addCharger = async (data: CreateChargerRequest): Promise<Charger> =
 
 export const updateCharger = async (data: UpdateChargerRequest): Promise<Charger> => {
   // Dummy implementation
-  const updatedCharger: Charger = { id: data.id, name: data.name!, location: data.location!, status: data.status! };
+  const updatedCharger: Charger = {
+    id: data.id,
+    name: data.name!,
+    location: data.location!,
+    type: data.type!,
+    powerOutput: data.powerOutput!,
+    pricePerKwh: data.pricePerKwh!,
+    status: data.status!,
+  };
   console.log('Updating charger:', updatedCharger);
   return updatedCharger;
   // const response = await fetch(`${API_BASE_URL}/chargers/${data.id}`, {
@@ -67,13 +96,12 @@ export const deleteCharger = async (id: string): Promise<void> => {
 };
 
 export const toggleChargerStatus = async (id: string): Promise<Charger> => {
-  // Dummy implementation - cycle through statuses
-  const statuses: ('available' | 'offline' | 'maintenance')[] = ['available', 'offline', 'maintenance'];
+  // Dummy implementation - toggle between AVAILABLE and OFFLINE
   const dummyChargers = await getChargers();
   const charger = dummyChargers.find(c => c.id === id);
   if (!charger) throw new Error('Charger not found');
-  const currentIndex = statuses.indexOf(charger.status);
-  const nextStatus = statuses[(currentIndex + 1) % statuses.length];
+  
+  const nextStatus: 'AVAILABLE' | 'OFFLINE' = charger.status === 'AVAILABLE' ? 'OFFLINE' : 'AVAILABLE';
   const updatedCharger = { ...charger, status: nextStatus };
   console.log('Toggling status:', updatedCharger);
   return updatedCharger;
