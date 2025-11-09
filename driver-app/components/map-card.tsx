@@ -1,22 +1,33 @@
 import React from 'react';
 import { StyleSheet, View, Platform } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { useRouter } from 'expo-router';
+import { dummyChargers } from '@/data/dummy-chargers';
 
 interface MapCardProps {
   style?: any;
 }
 
 export function MapCard({ style }: MapCardProps) {
+  const router = useRouter();
+
+  const handleMarkerPress = (charger: any) => {
+    router.push({
+      pathname: '/charger-details',
+      params: { charger: JSON.stringify(charger) }
+    });
+  };
+
   return (
     <View style={[styles.container, style]}>
       <MapView
         style={styles.map}
         provider={PROVIDER_GOOGLE}
         initialRegion={{
-          latitude: 40.7128,
-          longitude: -74.0060,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
+          latitude: 6.9000, // Battaramulla, Sri Lanka
+          longitude: 79.9070,
+          latitudeDelta: 0.1,
+          longitudeDelta: 0.1,
         }}
         userInterfaceStyle="dark"
         mapType={Platform.OS === 'android' ? 'standard' : 'standard'}
@@ -26,14 +37,31 @@ export function MapCard({ style }: MapCardProps) {
         toolbarEnabled={false}
         customMapStyle={darkMapStyle}
       >
-        <Marker
-          coordinate={{
-            latitude: 40.7128,
-            longitude: -74.0060,
-          }}
-          title="Sample Charging Station"
-          description="Available • Fast Charging"
-        />
+        {dummyChargers.map((charger) => {
+          const getMarkerColor = (status: string) => {
+            switch (status) {
+              case 'AVAILABLE': return '#10B981'; // Green
+              case 'OCCUPIED': return '#F59E0B'; // Amber
+              case 'OFFLINE': return '#6B7280'; // Gray
+              case 'MAINTENANCE': return '#EF4444'; // Red
+              default: return '#6B7280';
+            }
+          };
+
+          return (
+            <Marker
+              key={charger.id}
+              coordinate={{
+                latitude: charger.latitude,
+                longitude: charger.longitude,
+              }}
+              pinColor={getMarkerColor(charger.status)}
+              title={charger.name}
+              description={`${charger.chargingSpeed} • Rs.${charger.pricePerHour}/hr`}
+              onPress={() => handleMarkerPress(charger)}
+            />
+          );
+        })}
       </MapView>
     </View>
   );
