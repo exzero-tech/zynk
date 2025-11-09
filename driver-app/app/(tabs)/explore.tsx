@@ -1,16 +1,43 @@
 import { StyleSheet } from 'react-native';
+import { useState } from 'react';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { SearchBar } from '@/components/search-bar';
+import { MapCard } from '@/components/map-card';
+import { FilterModal, FilterOptions } from '@/components/filter-modal';
 
-export default function ExploreScreen() {
+function ExploreScreen() {
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterOptions | null>(null);
+
+  const handleSearch = (query: string) => {
+    console.log('Searching for:', query);
+    // TODO: Implement search functionality
+  };
+
+  const handleFilterPress = () => {
+    setFilterVisible(true);
+  };
+
+  const handleApplyFilters = (filters: FilterOptions) => {
+    setActiveFilters(filters);
+    console.log('Applied filters:', filters);
+    // TODO: Implement filter functionality
+  };
+
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="title" style={styles.title}>
         Explore
       </ThemedText>
-      <ThemedText style={styles.subtitle}>
-        Find charging stations near you
-      </ThemedText>
+      <SearchBar onSearch={handleSearch} onFilterPress={handleFilterPress} />
+      <MapCard style={styles.mapCard} />
+      
+      <FilterModal
+        visible={filterVisible}
+        onClose={() => setFilterVisible(false)}
+        onApplyFilters={handleApplyFilters}
+      />
     </ThemedView>
   );
 }
@@ -18,19 +45,19 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
     paddingTop: 50,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 10,
+    textAlign: 'left',
+    marginTop: 20,
+    marginLeft: 20,
   },
-  subtitle: {
-    fontSize: 18,
-    textAlign: 'center',
-    opacity: 0.8,
+  mapCard: {
+    flex: 1,
   },
 });
+
+export default ExploreScreen;
