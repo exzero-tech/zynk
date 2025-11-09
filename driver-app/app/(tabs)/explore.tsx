@@ -1,14 +1,32 @@
 import { StyleSheet } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { SearchBar } from '@/components/search-bar';
 import { MapCard } from '@/components/map-card';
 import { FilterModal, FilterOptions } from '@/components/filter-modal';
+import { useLocalSearchParams } from 'expo-router';
 
 function ExploreScreen() {
   const [filterVisible, setFilterVisible] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterOptions | null>(null);
+  const params = useLocalSearchParams();
+  const hasAppliedFilter = useRef(false);
+
+  useEffect(() => {
+    // Check if we should apply a filter from navigation (only once)
+    if (params.applyFilter === 'true' && params.amenity && !hasAppliedFilter.current) {
+      const amenity = params.amenity as string;
+      setActiveFilters({
+        chargerSpeed: [],
+        socketType: [],
+        availability: 'All',
+        amenities: [amenity],
+      });
+      console.log('Applied amenity filter:', amenity);
+      hasAppliedFilter.current = true;
+    }
+  }, [params]);
 
   const handleSearch = (query: string) => {
     console.log('Searching for:', query);
@@ -37,6 +55,7 @@ function ExploreScreen() {
         visible={filterVisible}
         onClose={() => setFilterVisible(false)}
         onApplyFilters={handleApplyFilters}
+        currentFilters={activeFilters}
       />
     </ThemedView>
   );
